@@ -380,8 +380,7 @@ kbd{
 .cat-app .app-icon{ width:40px;height:40px;flex-shrink:0; font-size:17px; margin-bottom:0; }
 .cat-app h4{ font-size:15px; font-weight:600; margin-bottom:2px; }
 .cat-app p{ font-size:12.5px; color:var(--text-dim); line-height:1.5; margin:4px 0 10px; }
-.cat-app .app-tags{ margin-bottom:10px; }
-.cat-app .card-link{ font-size:12.5px; }
+.cat-app .app-tags{ margin-bottom:0; }
 .cat-empty{ grid-column:1/-1; text-align:center; color:var(--text-faint); font-family:var(--font-mono); font-size:13px; padding:30px 0; }
 
 @media (max-width:560px){ .cat-app-list{ grid-template-columns:1fr; } .cat-modal{ padding:24px 18px; } }
