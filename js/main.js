@@ -366,14 +366,11 @@
   }
 
   $('#submit-btn') && $('#submit-btn').addEventListener('click', () => {
-    showToast('Thanks — we\u2019ll take a look at your submission.');
+    const msg = 'I want to add this app and this is the repo';
+    window.open('https://t.me/therealreze?text=' + encodeURIComponent(msg), '_blank', 'noopener');
+    showToast('Opening Telegram…');
   });
 
-  $$('.card-link').forEach(link => {
-    link.addEventListener('click', e => {
-      e.preventDefault();
-      showToast('Repo link copied to clipboard.');
-    });
-  });
+  // App "Open repo" behaviour is now handled in js/categories.js
 
 })();

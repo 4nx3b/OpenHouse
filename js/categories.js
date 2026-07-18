@@ -141,8 +141,10 @@
       ? `<img class="cat-thumb" src="${a.thumb}" alt="${esc(a.name)}">`
       : `<span class="app-icon">${a.icon || GLYPH[a.cat] || '•'}</span>`;
     const tags = a.tags.concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
-    return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" style="animation-delay:${(i*0.05).toFixed(2)}s">
+    const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
+    return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
+      ${delBtn}
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
@@ -175,6 +177,14 @@
       card.addEventListener('click', () => {
         if(repo) window.open(repo, '_blank', 'noopener');
         else toast('No repo linked to this app yet.');
+      });
+      const del = card.querySelector('.cat-del');
+      if(del) del.addEventListener('click', e => {
+        e.stopPropagation();
+        const name = card.dataset.name;
+        if(name && window.confirm('Delete "' + name + '"? This cannot be undone.')){
+          deleteApp(card.dataset.cat, name);
+        }
       });
     });
   }
@@ -379,6 +389,7 @@
     UPLOADS.push(obj);
     saveUploads();
     renderGrid();
+    buildPaletteApps();
 
     errEl.textContent = '';
     closeUpload();
@@ -424,10 +435,55 @@
     setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 400); }, 3200);
   }
 
+  /* ---------------- PALETTE APPS + DELETE ---------------- */
+  function buildPaletteApps(){
+    const results = $('#palette-results');
+    if(!results) return;
+    results.querySelectorAll('.palette-app').forEach(n => n.remove());
+    ORDER.forEach(cat => {
+      (BY_CAT[cat] || []).forEach(app => {
+        const li = document.createElement('li');
+        li.className = 'palette-app';
+        li.dataset.href = '#apps';
+        li.dataset.cat = cat;
+        li.dataset.search = (app.name + ' ' + cat + ' ' + (app.repo || '')).toLowerCase();
+        li.innerHTML = `<span>${esc(app.name)} <em>${esc(cat)}</em></span><em>App</em>`;
+        li.addEventListener('click', () => {
+          const ov = $('#palette-overlay');
+          if(ov) ov.classList.remove('open');
+          openCat(cat);
+        });
+        results.appendChild(li);
+      });
+    });
+  }
+
+  function deleteApp(cat, name){
+    BY_CAT[cat] = (BY_CAT[cat] || []).filter(a => !(a.cat === cat && a.name === name));
+    UPLOADS = UPLOADS.filter(a => !(a.cat === cat && a.name === name));
+    saveUploads();
+    buildPaletteApps();
+    renderGrid();
+    render();
+    toast('App deleted.');
+  }
+
   /* ---------------- INIT ---------------- */
   mergeUploads();
   renderGrid();
   refreshAdminUI();
+  buildPaletteApps();
+
+  const paletteInput = $('#palette-input');
+  if(paletteInput){
+    paletteInput.addEventListener('input', e => {
+      const q = e.target.value.trim().toLowerCase();
+      $$('#palette-results li').forEach(li => {
+        const hay = (li.dataset.search || li.textContent || '').toLowerCase();
+        li.classList.toggle('hidden', !hay.includes(q));
+      });
+    });
+  }
 
   // Keep the hero stats in sync with the real (incl. uploaded) totals.
   const statNums = $$('.stats .stat-num');
