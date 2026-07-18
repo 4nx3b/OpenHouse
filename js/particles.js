@@ -14,8 +14,8 @@
   let glowSprite = null;
 
   // Lighter budget: fewer particles, capped pixel ratio (perf > crispness here)
-  const COUNT_DESKTOP = 46;
-  const COUNT_MOBILE = 22;
+  const COUNT_DESKTOP = 34;
+  const COUNT_MOBILE = 14;
   const RADIUS = 170; // mouse influence radius, css px
 
   function buildGlowSprite(){
@@ -61,6 +61,7 @@
   }
 
   function addBurst(clientX, clientY){
+    if(!running) return; // loop is off (touch/reduced) — skip building bursts
     const rect = canvas.getBoundingClientRect();
     const x = (clientX - rect.left) * dpr;
     const y = (clientY - rect.top) * dpr;
@@ -80,8 +81,7 @@
   }
   window.__particleBurst = addBurst;
 
-  function step(){
-    if(!running) return;
+  function draw(){
     ctx.clearRect(0,0,w,h);
 
     const radiusPx = RADIUS * dpr;
@@ -130,6 +130,12 @@
     requestAnimationFrame(step);
   }
 
+  function step(){
+    if(!running) return;
+    draw();
+    requestAnimationFrame(step);
+  }
+
   function start(){ if(!running){ running = true; requestAnimationFrame(step); } }
   function stop(){ running = false; }
 
@@ -152,19 +158,18 @@
   buildGlowSprite();
   init();
 
-  // only animate while the hero is actually visible — saves cycles on the
-  // rest of the page and while the tab is scrolled away or backgrounded
-  if('IntersectionObserver' in window){
+  // On touch / reduced-motion devices, skip the continuous animation loop
+  // entirely and just paint one static frame (saves CPU/battery on phones).
+  if(isTouch || reduced){
+    draw();
+  } else if('IntersectionObserver' in window){
+    // only animate while the hero is actually visible — saves cycles on the
+    // rest of the page and while the tab is scrolled away or backgrounded
     const io = new IntersectionObserver((entries) => {
       entries.forEach(entry => entry.isIntersecting ? start() : stop());
     }, { threshold: 0 });
     io.observe(hero);
   } else {
     start();
-  }
-
-  if(reduced){
-    stop();
-    running = true; step(); running = false; // draw a single static frame
   }
 })();

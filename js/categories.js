@@ -17,6 +17,16 @@
       ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
   }
 
+  // Turn a pasted repo reference into a full https URL we can open.
+  function normalizeRepo(url){
+    if(!url) return '';
+    url = String(url).trim();
+    if(/^https?:\/\//i.test(url)) return url;
+    if(/^github\.com\//i.test(url)) return 'https://' + url;
+    if(/^[\w.-]+\/[\w.-]+$/.test(url)) return 'https://github.com/' + url;
+    return url;
+  }
+
   /* ---------------- DATA ---------------- */
   const ORDER = ['Featured','Media','Productivity','Finance','Dev Tools','Notes',
                  'Utilities','Communication','Design','Security','Health','Tools'];
@@ -27,73 +37,10 @@
     'Security':'🔒', 'Health':'♥', 'Tools':'🧰'
   };
 
-  const DESC = {
-    'Media':'Open-source media for your library — players, editors, and streamers.',
-    'Productivity':'Plan, track, and ship your work without the lock-in.',
-    'Finance':'Privacy-first money tools. Your numbers stay yours.',
-    'Dev Tools':'The utilities developers actually live in, built in the open.',
-    'Notes':'Capture and connect your thinking, synced your way.',
-    'Utilities':'System and file tools that respect your machine.',
-    'Communication':'Chat, mail, and calls that don\'t mine your data.',
-    'Design':'Create freely with open design and illustration tools.',
-    'Security':'Lock it down — passwords, encryption, and network privacy.',
-    'Health':'Own your health data with open tracking tools.',
-    'Tools':'Handy command-line and desktop utilities, no strings attached.'
-  };
-
-  // The original six sample apps now live in the Featured popup.
-  const FEATURED = [
-    { name:'Waveline',    icon:'♪', desc:'Ad-free Android music player with synced lyrics and offline caching.', tags:['Media','Android'],        license:'MIT',        added:'2025-08-14' },
-    { name:'Ledgerly',    icon:'▤', desc:'Local-first budgeting app. Your numbers never leave your device.',        tags:['Finance','Desktop'],      license:'GPL-3.0',    added:'2025-05-02' },
-    { name:'Splitscreen', icon:'◧', desc:'A tiling window manager for people who live in the terminal.',            tags:['Dev tools','Linux'],      license:'MIT',        added:'2024-11-19' },
-    { name:'Marginal',    icon:'✎', desc:'Markdown notes with backlinks, synced over your own git remote.',         tags:['Notes','Cross-platform'], license:'Apache-2.0', added:'2026-01-27' },
-    { name:'Reelhouse',   icon:'▶', desc:'A minimal video player built around subtitles and playback speed.',       tags:['Media','Android'],        license:'GPL-3.0',    added:'2024-07-08' },
-    { name:'Rootkit',     icon:'⌘', desc:'Android root utilities and module manager, no ads, no bloat.',            tags:['Utilities','Android'],    license:'MIT',        added:'2025-12-03' }
-  ];
-
-  const POOLS = {
-    'Media':        ['Audacious','Celluloid','mpv','Strawberry','Kodi','Jellyfin','Navidrome','Spotube','Rhythmbox','Elisa','MuseScore','OBS Studio'],
-    'Productivity': ['Super-productivity','Taskwarrior','Getting Things GNOME','Emacs Org','Logseq','Anytype','AppFlowy','Planner','Kanboard','Wekan','Vikunja','Nextcloud Tasks'],
-    'Finance':      ['Ledger','hledger','Firefly III','Actual','GnuCash','Beancount','Skrooge','KMyMoney','BTCPay Server','Electrum','Fava','CoinOS'],
-    'Dev Tools':    ['Neovim','VS Codium','GitKraken','Lazygit','Starship','Tmux','WezTerm','Bottom','Bat','Ripgrep','Fd','Zellij'],
-    'Notes':        ['Joplin','Trilium','Standard Notes','Notable','MarkText','Zettlr','SiYuan','Foam','Obsidian','Notebook','Membrane','Bangle'],
-    'Utilities':    ['Files','BleachBit','Stacer','Czkawka','KDE Connect','Syncthing','Ventoy','Rclone','PeaZip','BalenaEtcher','GParted','Neofetch'],
-    'Communication':['Element','Signal','Session','Briar','Jitsi','Mattermost','Revolution IRC','Thunderbird','Delta Chat','Tox','Quassel','Gajim'],
-    'Design':       ['Inkscape','GIMP','Krita','Blender','Penpot','Excalidraw','Pencil','Darktable','Scribus','Gravit','Akira','Glimpse'],
-    'Security':     ['Bitwarden','KeePassXC','VeraCrypt','KeePass','Proton Pass','Pass','Age','YubiKey Manager','WireGuard','Pi-hole','Fail2Ban','OnionShare'],
-    'Health':       ['wger','Open Food Facts','FitoTrack','Pedometer','Loop','Nightscout','Calorie','Workout Logger','Sleep Tracker','Meditation','OpenScale','Nutritionix'],
-    'Tools':        ['yt-dlp','fzf','ripgrep','jq','fd','bat','eza','zoxide','tldr','httpie','curl','wget']
-  };
-
-  const LICENSES  = ['MIT','GPL-3.0','Apache-2.0','AGPL-3.0','BSD-3'];
-  const PLATFORMS = ['Android','Desktop','Linux','Cross-platform','Web','iOS','Windows','macOS'];
-
-  function buildApps(){
-    const apps = FEATURED.map(a => Object.assign({ cat:'Featured' }, a));
-    const base = new Date('2026-07-01T00:00:00Z');
-    ORDER.forEach((cat, ci) => {
-      if(cat === 'Featured') return;
-      (POOLS[cat] || []).forEach((nm, i) => {
-        const off = ci*41 + i*29 + (i % 7)*13;
-        const d = new Date(base); d.setUTCDate(d.getUTCDate() - off);
-        apps.push({
-          name: nm,
-          cat,
-          icon: GLYPH[cat],
-          desc: DESC[cat] || ('Open-source ' + cat.toLowerCase() + ' software.'),
-          tags: [cat, PLATFORMS[(ci + i) % PLATFORMS.length]],
-          license: LICENSES[(ci + i) % LICENSES.length],
-          added: d.toISOString().slice(0,10)
-        });
-      });
-    });
-    return apps;
-  }
-
-  const APPS  = buildApps();
+  // Categories start empty — owners populate them through the upload flow.
+  const APPS = [];
   const BY_CAT = {};
   ORDER.forEach(c => BY_CAT[c] = []);
-  APPS.forEach(a => { (BY_CAT[a.cat] = BY_CAT[a.cat] || []).push(a); });
 
   /* ---------------- PERSISTENCE (owner uploads) ---------------- */
   const LS_KEY = 'openhouse-uploads';
@@ -184,24 +131,24 @@
     const start = (cur.page - 1) * PAGE_SIZE;
     const slice = apps.slice(start, start + PAGE_SIZE);
     listEl.innerHTML = slice.length
-      ? slice.map(cardHTML).join('')
+      ? slice.map((a, i) => cardHTML(a, i)).join('')
       : `<p class="cat-empty">No apps in this category yet.</p>`;
     bindCards();
   }
 
-  function cardHTML(a){
+  function cardHTML(a, i){
     const media = a.thumb
       ? `<img class="cat-thumb" src="${a.thumb}" alt="${esc(a.name)}">`
       : `<span class="app-icon">${a.icon || GLYPH[a.cat] || '•'}</span>`;
     const tags = a.tags.concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
-    return `<article class="cat-app tilt-card" data-cursor="pointer">
+    return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
         <p>${esc(a.desc)}</p>
         <div class="app-tags">${tags}</div>
-        <button class="card-link" data-cursor="pointer">View repo <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="card-link" data-cursor="pointer">Open repo <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M7 17L17 7M17 7H9M17 7V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
     </article>`;
   }
@@ -223,9 +170,13 @@
         card.addEventListener('mouseleave', () => { card.style.transform = ''; });
       });
     }
-    $$('.card-link', listEl).forEach(b =>
-      b.addEventListener('click', e => { e.preventDefault(); toast('Repo link copied to clipboard.'); })
-    );
+    $$('.cat-app', listEl).forEach(card => {
+      const repo = normalizeRepo(card.dataset.repo);
+      card.addEventListener('click', () => {
+        if(repo) window.open(repo, '_blank', 'noopener');
+        else toast('No repo linked to this app yet.');
+      });
+    });
   }
 
   /* ---------------- PAGINATION + SORT ---------------- */

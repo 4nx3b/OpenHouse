@@ -176,7 +176,7 @@
   if(hasGsap) gsap.registerPlugin(ScrollTrigger);
 
   let lenis;
-  if(typeof Lenis !== 'undefined' && !reduced){
+  if(typeof Lenis !== 'undefined' && !reduced && !isTouch){
     lenis = new Lenis({ duration: 1.1, smoothWheel: true });
     lenis.on('scroll', updateProgress);
     if(hasGsap){
@@ -189,7 +189,7 @@
   }
 
   /* ============ PARALLAX (ScrollTrigger) ============ */
-  if(hasGsap && !reduced){
+  if(hasGsap && !reduced && !isTouch){
     gsap.to('.grid-overlay', { yPercent: 18, ease:'none', scrollTrigger:{ trigger:'.hero', start:'top top', end:'bottom top', scrub:true }});
     gsap.to('.fog', { yPercent: -12, ease:'none', scrollTrigger:{ trigger:'.hero', start:'top top', end:'bottom top', scrub:true }});
   }
