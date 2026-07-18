@@ -28,8 +28,8 @@
   }
 
   /* ---------------- DATA ---------------- */
-  const ORDER = ['Featured','Media','Productivity','Finance','Dev Tools','Notes',
-                 'Utilities','Communication','Design','Security','Health','Tools'];
+  let ORDER = ['Featured','Media','Productivity','Finance','Dev Tools','Notes',
+               'Utilities','Communication','Design','Security','Health','Tools'];
 
   const GLYPH = {
     'Featured':'✦', 'Media':'♪', 'Productivity':'✓', 'Finance':'$', 'Dev Tools':'◧',
@@ -37,10 +37,30 @@
     'Security':'🔒', 'Health':'♥', 'Tools':'🧰'
   };
 
+  /* Custom icons (emoji) + deleted categories — persisted */
+  const LS_ICONS  = 'openhouse-cat-icons';
+  const LS_HIDDEN = 'openhouse-hidden-cats';
+  let CUSTOM_GLYPHS = loadJSON(LS_ICONS, {});
+  let HIDDEN_CATS   = loadJSON(LS_HIDDEN, []);
+  function loadJSON(key, fallback){
+    try { return JSON.parse(localStorage.getItem(key)) || fallback; } catch(e){ return fallback; }
+  }
+  function saveJSON(key, val){ try { localStorage.setItem(key, JSON.stringify(val)); } catch(e){} }
+
+  // Resolve the icon for a category: custom emoji wins over the built-in glyph.
+  function glyphFor(cat){ return CUSTOM_GLYPHS[cat] || GLYPH[cat] || '•'; }
+
   // Categories start empty — owners populate them through the upload flow.
+  // Categories the owner deleted earlier stay hidden until recreated.
+  ORDER = ORDER.filter(c => !HIDDEN_CATS.includes(c));
   const APPS = [];
   const BY_CAT = {};
   ORDER.forEach(c => BY_CAT[c] = []);
+
+  function unhideCat(cat){
+    const i = HIDDEN_CATS.indexOf(cat);
+    if(i > -1){ HIDDEN_CATS.splice(i, 1); saveJSON(LS_HIDDEN, HIDDEN_CATS); }
+  }
 
   /* ---------------- PERSISTENCE (owner uploads) ---------------- */
   const LS_KEY = 'openhouse-uploads';
@@ -49,6 +69,7 @@
   function saveUploads(){ try { localStorage.setItem(LS_KEY, JSON.stringify(UPLOADS)); } catch(e){} }
   function mergeUploads(){
     UPLOADS.forEach(a => {
+      unhideCat(a.cat); // an app in a category means it exists again
       BY_CAT[a.cat] = BY_CAT[a.cat] || [];
       if(!ORDER.includes(a.cat)) ORDER.push(a.cat);
       BY_CAT[a.cat].push(a);
@@ -73,15 +94,114 @@
   function renderGrid(){
     grid.innerHTML = ORDER.map(cat => {
       const n = (BY_CAT[cat] || []).length;
+      const acts = isAdmin
+        ? `<span class="cat-act cat-act-icon" role="button" tabindex="0" data-act="icon" title="Change icon" aria-label="Change icon for ${esc(cat)}">✎</span>
+           <span class="cat-act cat-act-del" role="button" tabindex="0" data-act="del" title="Delete category" aria-label="Delete ${esc(cat)} category">✕</span>`
+        : '';
       return `<button class="cat-pill" data-cat="${esc(cat)}" data-cursor="pointer" aria-label="Open ${esc(cat)} category">
-        <span class="cat-ico">${GLYPH[cat] || '•'}</span>
+        <span class="cat-ico">${esc(glyphFor(cat))}</span>
         <span class="cat-name">${esc(cat)}</span>
         <span class="cat-count">${n}</span>
+        ${acts}
       </button>`;
     }).join('');
 
     $$('.cat-pill', grid).forEach(btn => {
-      btn.addEventListener('click', () => openCat(btn.dataset.cat));
+      btn.addEventListener('click', e => {
+        const act = e.target.closest('.cat-act');
+        if(act){
+          e.stopPropagation();
+          if(act.dataset.act === 'icon') openIconEditor(btn.dataset.cat);
+          else deleteCategory(btn.dataset.cat);
+          return;
+        }
+        openCat(btn.dataset.cat);
+      });
+    });
+  }
+
+  /* ---------------- DELETE CATEGORY (owner only) ---------------- */
+  function deleteCategory(cat){
+    if(!isAdmin) return;
+    const n = (BY_CAT[cat] || []).length;
+    const msg = n
+      ? `Delete the "${cat}" category and the ${n} app${n === 1 ? '' : 's'} inside it? This cannot be undone.`
+      : `Delete the empty "${cat}" category?`;
+    if(!window.confirm(msg)) return;
+
+    UPLOADS = UPLOADS.filter(a => a.cat !== cat);
+    saveUploads();
+    delete BY_CAT[cat];
+    ORDER = ORDER.filter(c => c !== cat);
+    if(!HIDDEN_CATS.includes(cat)) HIDDEN_CATS.push(cat);
+    saveJSON(LS_HIDDEN, HIDDEN_CATS);
+    if(CUSTOM_GLYPHS[cat]){ delete CUSTOM_GLYPHS[cat]; saveJSON(LS_ICONS, CUSTOM_GLYPHS); }
+
+    if(cur.cat === cat) closeCat();
+    renderGrid();
+    buildPaletteApps();
+    updateStats();
+    toast('Category "' + cat + '" deleted.');
+  }
+
+  /* ---------------- ICON / EMOJI EDITOR (owner only) ---------------- */
+  const iconOverlay = $('#icon-overlay');
+  let iconCat = null;
+
+  // Keep just the first grapheme so multi-codepoint emoji (e.g. 👨‍👩‍👧) survive
+  // but longer pasted text doesn't blow the pill layout.
+  function firstGrapheme(str){
+    str = String(str || '').trim();
+    if(!str) return '';
+    try {
+      if(typeof Intl !== 'undefined' && Intl.Segmenter){
+        const seg = new Intl.Segmenter(undefined, { granularity:'grapheme' });
+        const it = seg.segment(str)[Symbol.iterator]().next();
+        if(!it.done) return it.value.segment;
+      }
+    } catch(e){}
+    return str.slice(0, 8);
+  }
+
+  function openIconEditor(cat){
+    if(!isAdmin || !iconOverlay) return;
+    iconCat = cat;
+    $('#icon-cat-name').textContent = cat;
+    $('#icon-current').textContent = glyphFor(cat);
+    $('#icon-input').value = CUSTOM_GLYPHS[cat] || '';
+    $('#icon-reset').hidden = !CUSTOM_GLYPHS[cat];
+    iconOverlay.classList.add('open');
+    setTimeout(() => { try { $('#icon-input').focus(); } catch(e){} }, 80);
+  }
+  function closeIconEditor(){ if(iconOverlay) iconOverlay.classList.remove('open'); iconCat = null; }
+
+  if(iconOverlay){
+    // live preview while typing / pasting
+    $('#icon-input').addEventListener('input', () => {
+      const v = firstGrapheme($('#icon-input').value);
+      $('#icon-current').textContent = v || glyphFor(iconCat);
+    });
+    $('#icon-close').addEventListener('click', closeIconEditor);
+    iconOverlay.addEventListener('click', e => { if(e.target === iconOverlay) closeIconEditor(); });
+    $('#icon-reset').addEventListener('click', () => {
+      if(!iconCat) return;
+      delete CUSTOM_GLYPHS[iconCat];
+      saveJSON(LS_ICONS, CUSTOM_GLYPHS);
+      renderGrid();
+      toast('Icon reset to default.');
+      closeIconEditor();
+    });
+    $('#icon-form').addEventListener('submit', e => {
+      e.preventDefault();
+      if(!iconCat) return;
+      const v = firstGrapheme($('#icon-input').value);
+      if(!v){ $('#icon-error').textContent = 'Type or paste an emoji first.'; return; }
+      $('#icon-error').textContent = '';
+      CUSTOM_GLYPHS[iconCat] = v;
+      saveJSON(LS_ICONS, CUSTOM_GLYPHS);
+      renderGrid();
+      toast('Icon updated for "' + iconCat + '".');
+      closeIconEditor();
     });
   }
 
@@ -139,10 +259,10 @@
   function cardHTML(a, i){
     const media = a.thumb
       ? `<img class="cat-thumb" src="${a.thumb}" alt="${esc(a.name)}">`
-      : `<span class="app-icon">${a.icon || GLYPH[a.cat] || '•'}</span>`;
+      : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
     const tags = a.tags.concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
-    return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
+    return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
       ${delBtn}
       ${media}
@@ -229,6 +349,7 @@
     $('#admin-signin-item').hidden = isAdmin;
     $('#admin-upload-item').hidden = !isAdmin;
     $('#admin-signout-item').hidden = !isAdmin;
+    renderGrid(); // show/hide the per-category edit + delete controls
   }
 
   function openLogin(){
@@ -298,6 +419,7 @@
     $('#up-repo-hint').textContent = 'Paste a GitHub repo URL and we\'ll pull the description automatically.';
     $('#upload-error').textContent = '';
     $('#up-newcat-field').hidden = true;
+    if($('#up-newcat-icon-field')) $('#up-newcat-icon-field').hidden = true;
     $('#up-thumb-preview').hidden = true;
     pickedThumb = null; repoThumb = '';
     populateCategorySelect();
@@ -310,7 +432,9 @@
   $('#upload-overlay').addEventListener('click', e => { if(e.target === uploadOverlay) closeUpload(); });
 
   $('#up-category').addEventListener('change', () => {
-    $('#up-newcat-field').hidden = $('#up-category').value !== '__new__';
+    const isNew = $('#up-category').value === '__new__';
+    $('#up-newcat-field').hidden = !isNew;
+    if($('#up-newcat-icon-field')) $('#up-newcat-icon-field').hidden = !isNew;
   });
 
   $('#up-thumb').addEventListener('change', e => {
@@ -371,10 +495,18 @@
     if(!name){ errEl.textContent = 'App name is required.'; return; }
     if(!cat){ errEl.textContent = 'Choose or create a category.'; return; }
 
+    // Optional emoji chosen while creating a new category
+    const newIconRaw = $('#up-newcat-icon') ? $('#up-newcat-icon').value : '';
+    const newIcon = firstGrapheme(newIconRaw);
+    if($('#up-category').value === '__new__' && newIcon){
+      CUSTOM_GLYPHS[cat] = newIcon;
+      saveJSON(LS_ICONS, CUSTOM_GLYPHS);
+    }
+
     const obj = {
       name,
       cat,
-      icon: GLYPH[cat] || '•',
+      icon: glyphFor(cat),
       desc: $('#up-desc').value.trim() || 'No description provided.',
       tags: [cat],
       license: $('#up-license').value.trim() || 'MIT',
@@ -383,6 +515,7 @@
       thumb: pickedThumb || repoThumb || ''
     };
 
+    unhideCat(cat);
     BY_CAT[cat] = BY_CAT[cat] || [];
     if(!ORDER.includes(cat)) ORDER.push(cat);
     BY_CAT[cat].push(obj);
@@ -390,6 +523,7 @@
     saveUploads();
     renderGrid();
     buildPaletteApps();
+    updateStats();
 
     errEl.textContent = '';
     closeUpload();
@@ -418,7 +552,8 @@
   document.addEventListener('keydown', e => {
     if(e.key !== 'Escape') return;
     if(adminMenu && adminMenu.classList.contains('open')){ closeMenu(); return; }
-    if($('#cat-overlay').classList.contains('open')) closeCat();
+    if(iconOverlay && iconOverlay.classList.contains('open')) closeIconEditor();
+    else if($('#cat-overlay').classList.contains('open')) closeCat();
     else if(uploadOverlay.classList.contains('open')) closeUpload();
     else if($('#login-overlay').classList.contains('open')) closeLogin();
   });
@@ -465,6 +600,7 @@
     buildPaletteApps();
     renderGrid();
     render();
+    updateStats();
     toast('App deleted.');
   }
 
@@ -486,8 +622,11 @@
   }
 
   // Keep the hero stats in sync with the real (incl. uploaded) totals.
-  const statNums = $$('.stats .stat-num');
-  const totalApps = Object.keys(BY_CAT).reduce((n, c) => n + BY_CAT[c].length, 0);
-  if(statNums[0]) statNums[0].dataset.count = totalApps;
-  if(statNums[1]) statNums[1].dataset.count = ORDER.length;
+  function updateStats(){
+    const statNums = $$('.stats .stat-num');
+    const totalApps = Object.keys(BY_CAT).reduce((n, c) => n + BY_CAT[c].length, 0);
+    if(statNums[0]) statNums[0].dataset.count = totalApps;
+    if(statNums[1]) statNums[1].dataset.count = ORDER.length;
+  }
+  updateStats();
 })();

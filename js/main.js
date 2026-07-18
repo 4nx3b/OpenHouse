@@ -163,11 +163,18 @@
   }
 
   /* ============ SCROLL PROGRESS ============ */
+  // rAF-throttled + transform-based: no layout work, runs at most once a frame
   const progressBar = $('#scroll-progress');
+  let progressTicking = false;
   function updateProgress(){
-    const h = document.documentElement;
-    const scrolled = h.scrollTop / (h.scrollHeight - h.clientHeight) * 100;
-    if(progressBar) progressBar.style.width = (scrolled||0) + '%';
+    if(progressTicking) return;
+    progressTicking = true;
+    requestAnimationFrame(() => {
+      progressTicking = false;
+      const h = document.documentElement;
+      const p = h.scrollTop / (h.scrollHeight - h.clientHeight);
+      if(progressBar) progressBar.style.transform = 'scaleX(' + (p || 0) + ')';
+    });
   }
   document.addEventListener('scroll', updateProgress, { passive:true });
 
@@ -266,11 +273,18 @@
         onUpdate: self => setActiveLine(self.progress)
       });
     } else {
+      // rAF-throttled so getBoundingClientRect runs at most once per frame
+      let storyTicking = false;
       window.addEventListener('scroll', () => {
-        const r = storySection.getBoundingClientRect();
-        const total = r.height - window.innerHeight;
-        const progressed = Math.min(Math.max(-r.top, 0), total);
-        setActiveLine(total > 0 ? progressed / total : 0);
+        if(storyTicking) return;
+        storyTicking = true;
+        requestAnimationFrame(() => {
+          storyTicking = false;
+          const r = storySection.getBoundingClientRect();
+          const total = r.height - window.innerHeight;
+          const progressed = Math.min(Math.max(-r.top, 0), total);
+          setActiveLine(total > 0 ? progressed / total : 0);
+        });
       }, { passive:true });
     }
   }
