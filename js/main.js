@@ -101,7 +101,7 @@
     });
     window.addEventListener('pointerdown', (e) => {
       cursorRing.classList.add('clicked');
-      if(window.__particleBurst) window.__particleBurst(e.clientX * Math.min(devicePixelRatio||1,2), e.clientY * Math.min(devicePixelRatio||1,2));
+      if(window.__particleBurst) window.__particleBurst(e.clientX, e.clientY);
     });
     window.addEventListener('pointerup', () => cursorRing.classList.remove('clicked'));
   }
@@ -131,17 +131,30 @@
   /* ============ TILT CARDS + GLOW ============ */
   if(!isTouch){
     $$('.tilt-card').forEach(card => {
+      let rect = null;
+      let raf = null;
+      let pending = null;
+
+      card.addEventListener('mouseenter', () => { rect = card.getBoundingClientRect(); });
+
       card.addEventListener('mousemove', e => {
-        const r = card.getBoundingClientRect();
-        const px = (e.clientX - r.left) / r.width;
-        const py = (e.clientY - r.top) / r.height;
-        const rotY = (px - 0.5) * 10;
-        const rotX = (0.5 - py) * 10;
-        card.style.transform = `perspective(700px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(6px)`;
-        card.style.setProperty('--mx', (px*100) + '%');
-        card.style.setProperty('--my', (py*100) + '%');
+        if(!rect) rect = card.getBoundingClientRect();
+        pending = e;
+        if(raf) return;
+        raf = requestAnimationFrame(() => {
+          raf = null;
+          if(!pending) return;
+          const px = (pending.clientX - rect.left) / rect.width;
+          const py = (pending.clientY - rect.top) / rect.height;
+          const rotY = (px - 0.5) * 10;
+          const rotX = (0.5 - py) * 10;
+          card.style.transform = `perspective(700px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(6px)`;
+          card.style.setProperty('--mx', (px*100) + '%');
+          card.style.setProperty('--my', (py*100) + '%');
+        });
       });
       card.addEventListener('mouseleave', () => {
+        rect = null;
         card.style.transform = 'perspective(700px) rotateX(0) rotateY(0) translateZ(0)';
       });
     });

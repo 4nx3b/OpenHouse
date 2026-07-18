@@ -1,34 +1,56 @@
 (function(){
   const canvas = document.getElementById('particles');
-  if(!canvas) return;
-  const ctx = canvas.getContext('2d');
+  const hero = document.querySelector('.hero');
+  if(!canvas || !hero) return;
+  const ctx = canvas.getContext('2d', { alpha: true });
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isTouch = window.matchMedia('(hover:none)').matches;
 
   let w, h, dpr;
   let particles = [];
   let mouse = { x: -9999, y: -9999, active:false };
-  let bursts = []; // click explosions
+  let bursts = [];
+  let running = false;
+  let glowSprite = null;
 
-  const COUNT_DESKTOP = 90;
-  const COUNT_MOBILE = 40;
+  // Lighter budget: fewer particles, capped pixel ratio (perf > crispness here)
+  const COUNT_DESKTOP = 46;
+  const COUNT_MOBILE = 22;
+  const RADIUS = 170; // mouse influence radius, css px
+
+  function buildGlowSprite(){
+    // pre-render a soft dot once instead of using ctx.shadowBlur per-particle per-frame
+    const s = 24;
+    const off = document.createElement('canvas');
+    off.width = off.height = s;
+    const octx = off.getContext('2d');
+    const grad = octx.createRadialGradient(s/2, s/2, 0, s/2, s/2, s/2);
+    grad.addColorStop(0, 'rgba(255,200,140,0.9)');
+    grad.addColorStop(1, 'rgba(255,200,140,0)');
+    octx.fillStyle = grad;
+    octx.fillRect(0, 0, s, s);
+    glowSprite = off;
+  }
 
   function resize(){
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = canvas.width = window.innerWidth * dpr;
-    h = canvas.height = window.innerHeight * dpr;
-    canvas.style.width = window.innerWidth + 'px';
-    canvas.style.height = window.innerHeight + 'px';
+    dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    const rect = hero.getBoundingClientRect();
+    const cssW = window.innerWidth;
+    const cssH = Math.max(rect.height, window.innerHeight * 0.6);
+    canvas.style.width = cssW + 'px';
+    canvas.style.height = cssH + 'px';
+    w = canvas.width = cssW * dpr;
+    h = canvas.height = cssH * dpr;
   }
 
   function makeParticle(){
     return {
       x: Math.random() * w,
       y: Math.random() * h,
-      r: (Math.random() * 1.6 + 0.4) * dpr,
-      vx: (Math.random() - 0.5) * 0.15 * dpr,
-      vy: (Math.random() - 0.5) * 0.15 * dpr,
-      base: Math.random() * 0.5 + 0.15
+      r: (Math.random() * 1.4 + 0.5) * dpr,
+      vx: (Math.random() - 0.5) * 0.14 * dpr,
+      vy: (Math.random() - 0.5) * 0.14 * dpr,
+      base: Math.random() * 0.45 + 0.12
     };
   }
 
@@ -38,92 +60,111 @@
     particles = Array.from({length: count}, makeParticle);
   }
 
-  function addBurst(x, y){
-    const n = 18;
+  function addBurst(clientX, clientY){
+    const rect = canvas.getBoundingClientRect();
+    const x = (clientX - rect.left) * dpr;
+    const y = (clientY - rect.top) * dpr;
+    if(y < -100 || y > h + 100) return; // outside the canvas area, skip
+    const n = 10;
     for(let i=0;i<n;i++){
       const angle = (Math.PI * 2 * i) / n + Math.random()*0.3;
-      const speed = (Math.random()*2.2 + 1) * dpr;
+      const speed = (Math.random()*2 + 1) * dpr;
       bursts.push({
         x, y,
         vx: Math.cos(angle)*speed,
         vy: Math.sin(angle)*speed,
         life: 1,
-        r: (Math.random()*1.8+0.8) * dpr
+        r: (Math.random()*1.6+0.7) * dpr
       });
     }
   }
   window.__particleBurst = addBurst;
 
   function step(){
+    if(!running) return;
     ctx.clearRect(0,0,w,h);
 
-    // connecting lines (subtle web)
-    ctx.lineWidth = 1 * dpr;
+    const radiusPx = RADIUS * dpr;
+    const radiusSq = radiusPx * radiusPx;
 
     for(let i=0;i<particles.length;i++){
       const p = particles[i];
       p.x += p.vx;
       p.y += p.vy;
 
-      if(p.x < 0) p.x = w; if(p.x > w) p.x = 0;
-      if(p.y < 0) p.y = h; if(p.y > h) p.y = 0;
+      if(p.x < 0) p.x = w; else if(p.x > w) p.x = 0;
+      if(p.y < 0) p.y = h; else if(p.y > h) p.y = 0;
 
-      // mouse spotlight attraction (gentle)
+      let alpha = p.base;
       if(mouse.active){
         const dx = mouse.x - p.x, dy = mouse.y - p.y;
-        const dist = Math.sqrt(dx*dx + dy*dy);
-        const radius = 180 * dpr;
-        if(dist < radius){
-          const force = (1 - dist/radius) * 0.02;
-          p.x += dx * force * 0.05;
-          p.y += dy * force * 0.05;
+        const distSq = dx*dx + dy*dy;
+        if(distSq < radiusSq){
+          const t = 1 - distSq/radiusSq;
+          p.x += dx * t * 0.001;
+          p.y += dy * t * 0.001;
+          alpha = Math.min(p.base + t*0.5, 1);
         }
       }
 
-      const near = mouse.active && Math.hypot(mouse.x-p.x, mouse.y-p.y) < 180*dpr;
-      const alpha = near ? Math.min(p.base + 0.4, 1) : p.base;
-
       ctx.beginPath();
-      ctx.shadowBlur = near ? 10*dpr : 4*dpr;
-      ctx.shadowColor = 'rgba(255,180,84,0.6)';
       ctx.fillStyle = `rgba(240,238,233,${alpha})`;
       ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
       ctx.fill();
     }
 
-    // click burst particles
-    for(let i=bursts.length-1;i>=0;i--){
-      const b = bursts[i];
-      b.x += b.vx; b.y += b.vy;
-      b.vx *= 0.96; b.vy *= 0.96;
-      b.life -= 0.02;
-      if(b.life <= 0){ bursts.splice(i,1); continue; }
-      ctx.beginPath();
-      ctx.shadowBlur = 8*dpr;
-      ctx.shadowColor = 'rgba(255,180,84,0.8)';
-      ctx.fillStyle = `rgba(255,180,84,${b.life})`;
-      ctx.arc(b.x, b.y, b.r * b.life, 0, Math.PI*2);
-      ctx.fill();
+    if(bursts.length){
+      for(let i=bursts.length-1;i>=0;i--){
+        const b = bursts[i];
+        b.x += b.vx; b.y += b.vy;
+        b.vx *= 0.95; b.vy *= 0.95;
+        b.life -= 0.035;
+        if(b.life <= 0){ bursts.splice(i,1); continue; }
+        const size = 22 * b.life * dpr;
+        ctx.globalAlpha = b.life;
+        ctx.drawImage(glowSprite, b.x - size/2, b.y - size/2, size, size);
+        ctx.globalAlpha = 1;
+      }
     }
 
-    if(!reduced) requestAnimationFrame(step);
+    requestAnimationFrame(step);
   }
 
-  window.addEventListener('resize', () => { init(); });
+  function start(){ if(!running){ running = true; requestAnimationFrame(step); } }
+  function stop(){ running = false; }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(init, 150);
+  });
+
   if(!isTouch){
     window.addEventListener('pointermove', (e) => {
-      mouse.x = e.clientX * dpr;
-      mouse.y = e.clientY * dpr;
-      mouse.active = true;
-    });
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = (e.clientX - rect.left) * dpr;
+      mouse.y = (e.clientY - rect.top) * dpr;
+      mouse.active = e.clientY < rect.bottom;
+    }, { passive: true });
     window.addEventListener('pointerleave', () => { mouse.active = false; });
   }
 
+  buildGlowSprite();
   init();
-  if(reduced){
-    // draw a single static frame for reduced-motion users
-    step();
+
+  // only animate while the hero is actually visible — saves cycles on the
+  // rest of the page and while the tab is scrolled away or backgrounded
+  if('IntersectionObserver' in window){
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => entry.isIntersecting ? start() : stop());
+    }, { threshold: 0 });
+    io.observe(hero);
   } else {
-    requestAnimationFrame(step);
+    start();
+  }
+
+  if(reduced){
+    stop();
+    running = true; step(); running = false; // draw a single static frame
   }
 })();
