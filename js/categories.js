@@ -149,6 +149,9 @@
   }
   function closeCat(){ overlay.classList.remove('open'); }
 
+  closeBtn.addEventListener('click', closeCat);
+  overlay.addEventListener('click', e => { if(e.target === overlay) closeCat(); });
+
   /* ---------------- RENDER MODAL ---------------- */
   function sortedApps(){
     const arr = (BY_CAT[cur.cat] || []).slice();
@@ -250,7 +253,7 @@
   // upload UI out of casual view on a personal site. To change the password:
   //   node -e "let h=5381;for(const c of 'YOURPASSWORD')h=((h<<5)+h+c.charCodeAt(0))>>>0;console.log(h.toString(16))"
   // then replace ADMIN_HASH below.
-  const ADMIN_HASH = 'c6c69433'; // default password: "openhouse-owner"
+  const ADMIN_HASH = '8e9d4e65'; // password: #Kshitij@2131
   let isAdmin = false;
   try { isAdmin = sessionStorage.getItem('openhouse-admin') === '1'; } catch(e){}
 
