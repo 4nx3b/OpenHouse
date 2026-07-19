@@ -842,3 +842,41 @@ body.loaded .hero-actions.reveal-up.in{ transition-delay:.3s; }
 
 /* smooth color transition on all links */
 a{ transition:color .25s ease; }
+
+/* ============================================================
+   STORY BACKDROP IMAGES — one per line, rectangular, edge fade
+   ============================================================ */
+.story-art{
+  position:absolute; inset:0; z-index:0; pointer-events:none;
+  display:flex; align-items:center; justify-content:center;
+}
+.story-img{
+  position:absolute;
+  width:min(680px, 88vw);
+  aspect-ratio:16/9;
+  object-fit:cover;
+  border:none; border-radius:0;
+  opacity:0;
+  transform:scale(1.06);
+  transition:opacity 1s var(--ease), transform 1.4s var(--ease);
+  /* fade out toward all corners/edges — no hard rectangle line */
+  -webkit-mask-image:radial-gradient(ellipse 62% 58% at 50% 50%, rgba(0,0,0,.85) 30%, rgba(0,0,0,.35) 62%, transparent 82%);
+  mask-image:radial-gradient(ellipse 62% 58% at 50% 50%, rgba(0,0,0,.85) 30%, rgba(0,0,0,.35) 62%, transparent 82%);
+  filter:saturate(.85) contrast(1.02) brightness(.8);
+}
+.story-img.on{
+  opacity:.5;
+  transform:scale(1);
+}
+/* text sits above the art */
+.story-line{ z-index:1; }
+/* keep the line readable over busy art */
+.story-line[data-active="true"]{ text-shadow:0 2px 24px rgba(0,0,0,.85); }
+
+@media (max-width:640px){
+  .story-img{ width:96vw; }
+  .story-img.on{ opacity:.42; }
+}
+@media (prefers-reduced-motion: reduce){
+  .story-img{ transition:none; transform:none; }
+}
