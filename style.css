@@ -356,10 +356,10 @@ kbd{
 /* category popup */
 .cat-modal{ width:min(680px,100%); max-height:86vh; padding:20px 18px; display:flex; flex-direction:column; overflow:hidden; }
 .cat-modal .modal-close{ background:rgba(255,255,255,.06); }
-.cat-modal h3{ margin:6px 0 2px; }
-.cat-meta{ font-family:var(--font-mono); font-size:11.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; }
+.cat-modal h3{ margin:2px 0 0; font-size:19px; }
+.cat-meta{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:1px; }
 
-.cat-toolbar{ display:flex; align-items:center; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.cat-toolbar{ display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
 .pages-pill{ display:inline-flex; align-items:center; gap:2px; padding:3px; border-radius:100px; background:var(--panel); border:1px solid var(--panel-border); }
 .pages-pill .pg{ min-width:24px;height:24px; padding:0 7px; border-radius:100px; font-family:var(--font-mono); font-size:11px; color:var(--text-faint); display:inline-flex; align-items:center; justify-content:center; transition:background .2s,color .2s; }
 .pages-pill .pg:hover:not(:disabled){ color:var(--text); background:rgba(255,255,255,.06); }
@@ -367,7 +367,14 @@ kbd{
 .pages-pill .pg:disabled{ opacity:.3; cursor:default; }
 
 
-.cat-app-list{ overflow-y:auto; margin-top:10px; display:grid; grid-template-columns:1fr 1fr; align-items:start; align-content:start; gap:8px; padding-right:4px; flex:1; min-height:0; }
+.cat-app-list{
+  overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.15) transparent;
+  margin-top:8px; display:grid; grid-template-columns:1fr 1fr;
+  align-items:start; align-content:start; gap:8px; padding-right:4px; flex:1; min-height:0;
+}
+.cat-app-list::-webkit-scrollbar{ width:4px; }
+.cat-app-list::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.15); border-radius:4px; }
 .cat-app{ position:relative; overflow:visible; height:auto; padding:13px 12px; border-radius:var(--radius-md); background:var(--panel); border:1px solid var(--panel-border); display:flex; gap:11px; transform-style:preserve-3d; transition:transform .1s ease, border-color .3s ease; }
 .cat-app:hover{ border-color:var(--accent); }
 .cat-app:hover .card-glow{ opacity:1; }
