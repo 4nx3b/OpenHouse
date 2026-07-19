@@ -340,23 +340,17 @@ kbd{
 .cat-pill .cat-count{ font-family:var(--font-mono); font-size:11px; color:var(--text-faint); background:rgba(255,255,255,.06); padding:2px 8px; border-radius:100px; margin-left:2px; }
 
 /* category popup */
-.cat-modal{ width:min(680px,100%); max-height:86vh; padding:20px 18px; display:flex; flex-direction:column; overflow:hidden; }
+.cat-modal{ width:min(680px,100%); height:min(600px,86vh); padding:20px 18px; display:flex; flex-direction:column; overflow:hidden; }
 .cat-modal .modal-close{ background:rgba(255,255,255,.06); }
 .cat-modal h3{ margin:0 36px 0 0; font-size:19px; }
 .cat-meta{ font-family:var(--font-mono); font-size:10.5px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.05em; margin-top:1px; }
 
-.cat-toolbar{ display:flex; align-items:center; gap:8px; margin-top:6px; flex-wrap:wrap; }
-.pages-pill{ display:inline-flex; align-items:center; gap:2px; padding:3px; border-radius:100px; background:var(--panel); border:1px solid var(--panel-border); }
-.pages-pill .pg{ min-width:24px;height:24px; padding:0 7px; border-radius:100px; font-family:var(--font-mono); font-size:11px; color:var(--text-faint); display:inline-flex; align-items:center; justify-content:center; transition:background .2s,color .2s; }
-.pages-pill .pg:hover:not(:disabled){ color:var(--text); background:rgba(255,255,255,.06); }
-.pages-pill .pg.active{ background:rgba(255,255,255,.14); color:var(--text); font-weight:600; }
-.pages-pill .pg:disabled{ opacity:.3; cursor:default; }
 
 
 .cat-app-list{
   overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   scrollbar-width:none; -ms-overflow-style:none;
-  margin-top:8px; display:grid; grid-template-columns:1fr 1fr;
+  margin-top:12px; display:grid; grid-template-columns:1fr 1fr;
   align-items:start; align-content:start; gap:8px; flex:1; min-height:0;
 }
 .cat-app-list::-webkit-scrollbar{ display:none; width:0; }
@@ -632,8 +626,6 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 @keyframes ping{ 0%{ transform:scale(.6); opacity:.8; } 80%,100%{ transform:scale(2.2); opacity:0; } }
 
 /* --- sort + page buttons: press feedback --- */
-.pages-pill .pg:active{ transform:scale(.9); }
-.pages-pill .pg{ transition:background .2s, color .2s, transform .15s var(--ease); }
 
 /* --- brand mark: slow spin of the grid squares on hover --- */
 .brand svg{ transition:transform .6s var(--ease); }
@@ -714,9 +706,6 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 .cat-app:hover .app-tags span:nth-child(3){ transition-delay:.10s; }
 .cat-app:hover .app-tags span:nth-child(n+4){ transition-delay:.15s; }
 
-/* page number changes: pop the active pill */
-@keyframes pgPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
-.pages-pill .pg.active{ animation:pgPop .3s var(--ease); }
 
 
 /* category popup content cascades in */
@@ -818,11 +807,6 @@ body.loaded .hero-actions.reveal-up.in{ transition-delay:.3s; }
 /* modal overlays: backdrop fades + slight zoom-out of page behind */
 .modal-overlay{ transition:opacity .3s ease, visibility .3s ease, backdrop-filter .3s ease; }
 
-/* pagination arrows nudge in their direction on hover */
-@media (hover:hover){
-  .pages-pill .pg.prev:hover:not(:disabled){ transform:translateX(-2px); }
-  .pages-pill .pg.next:hover:not(:disabled){ transform:translateX(2px); }
-}
 
 /* toast dot pulses while visible */
 .toast .dot{ animation:blink 1.6s ease-in-out infinite; }
@@ -1098,9 +1082,6 @@ body.loaded .dock a:nth-child(4){ animation-delay:.79s; }
   .marquee-track span:hover{ transform:translateY(-2px); color:var(--accent); }
 }
 
-/* category popup: pages pill slides in from left, meta from right */
-.modal-overlay.open .cat-modal .pages-pill{ animation:slideL .45s var(--ease) .08s both; }
-@keyframes slideL{ from{ opacity:0; transform:translateX(-10px); } to{ opacity:1; transform:none; } }
 
 /* card menus: items cascade */
 .cat-menu.open .cat-menu-item{ animation:rowIn .3s var(--ease) both; }
@@ -1163,8 +1144,6 @@ input, textarea{ -webkit-user-select:text; user-select:text; }
 .modal-overlay.open .modal-close{ animation:closeIn .5s var(--ease) .25s both; }
 @keyframes closeIn{ from{ opacity:0; transform:rotate(-90deg) scale(.6); } to{ opacity:1; transform:rotate(0) scale(1); } }
 
-/* toolbar buttons ripple-ish press */
-.pages-pill .pg:active{ transform:scale(.85); }
 
 /* category pill icons: orbit glow on grid hover-in (desktop) */
 @media (hover:hover){
@@ -1334,3 +1313,5 @@ body.loaded .hero .eyebrow{ animation:rowIn .8s var(--ease) .3s both; }
 .log-apps li strong{ color:var(--text); font-weight:600; }
 .log-apps li em{ color:var(--accent); font-style:normal; }
 .log-day{ font-family:var(--font-mono); font-size:11px; color:var(--text-faint); }
+
+@keyframes pgPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
