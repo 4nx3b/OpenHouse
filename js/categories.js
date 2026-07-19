@@ -387,6 +387,13 @@
           e.stopPropagation();
           // close any other open card menu first
           $$('.cat-menu.open', listEl).forEach(m => { if(m !== menu) m.classList.remove('open'); });
+          if(!menu.classList.contains('open')){
+            // open upward if there's not enough room below (menu ≈ 140px)
+            const btnRect = menuWrap.getBoundingClientRect();
+            const listRect = listEl.getBoundingClientRect();
+            const spaceBelow = Math.min(listRect.bottom, window.innerHeight) - btnRect.bottom;
+            menu.classList.toggle('up', spaceBelow < 150);
+          }
           menu.classList.toggle('open');
         });
         menu.querySelectorAll('.cat-menu-item').forEach(item => {
