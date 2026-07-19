@@ -363,8 +363,16 @@
     $$('.cat-app', listEl).forEach(card => {
       const repo = normalizeRepo(card.dataset.repo);
       card.addEventListener('click', () => {
-        if(repo) window.open(repo, '_blank', 'noopener');
-        else toast('No repo linked to this app yet.');
+        if(!repo){ toast('No repo linked to this app yet.'); return; }
+        // Synthetic anchor click — unlike window.open, this is treated as a
+        // normal user navigation by every browser (Firefox blocks the former).
+        const a = document.createElement('a');
+        a.href = repo;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
       });
       const del = card.querySelector('.cat-del');
       if(del) del.addEventListener('click', e => {
