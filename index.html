@@ -374,7 +374,11 @@
     <button class="modal-close" id="changelog-close" data-cursor="pointer" aria-label="Close">✕</button>
     <span class="modal-eyebrow">Changelog</span>
     <h3>What's new on Openhouse.</h3>
-    <div class="info-scroll">
+    <div class="log-tabs" role="tablist" aria-label="Changelog sections">
+      <button class="log-tab active" id="log-tab-site" role="tab" aria-selected="true" data-pane="site" data-cursor="pointer">Website</button>
+      <button class="log-tab" id="log-tab-apps" role="tab" aria-selected="false" data-pane="apps" data-cursor="pointer">Apps</button>
+    </div>
+    <div class="info-scroll" id="log-pane-site" role="tabpanel">
       <div class="log-entry">
         <span class="log-date">July 2026</span>
         <ul class="info-list">
@@ -404,6 +408,10 @@
           <li>Openhouse launched — a hand-reviewed directory of open source apps.</li>
         </ul>
       </div>
+    </div>
+    <div class="info-scroll" id="log-pane-apps" role="tabpanel" hidden>
+      <!-- app history injected by js/categories.js -->
+      <p class="log-empty" id="log-apps-empty">No apps published yet.</p>
     </div>
   </div>
 </div>
