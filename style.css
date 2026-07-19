@@ -1424,7 +1424,10 @@ body.loaded .hero .eyebrow{ animation:rowIn .8s var(--ease) .3s both; }
 /* card flash when search/deep link lands on it */
 .cat-app.located{
   border-color:var(--accent);
-  animation:locatedFlash 2.2s var(--ease);
+  /* keep catCardIn in the list — replacing it would restart the entrance
+     animation (opacity 0 → blink) the moment .located is removed */
+  animation:catCardIn .55s cubic-bezier(.22,1.2,.36,1) both,
+            locatedFlash 2.2s var(--ease);
 }
 @keyframes locatedFlash{
   0%{ box-shadow:0 0 0 3px rgba(255,180,84,.55), 0 0 34px rgba(255,180,84,.3); transform:scale(1.02); }
