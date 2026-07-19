@@ -833,31 +833,34 @@
     return null;
   }
 
+  function fetchTimed(u, opts, ms){
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms || 6000);
+    return fetch(u, Object.assign({}, opts, { signal: ctrl.signal }))
+      .finally(() => clearTimeout(timer));
+  }
+
   async function getJSON(u, headers){
-    // 1) direct — works for hosts that send CORS headers (GitHub, GitLab,
-    //    Codeberg, Bitbucket, most gitea.com repos)
+    // 1) direct (6s cap) — hosts with CORS headers answer here
     try {
-      const res = await fetch(u, headers ? { headers } : undefined);
+      const res = await fetchTimed(u, headers ? { headers } : undefined, 6000);
       if(res.ok) return res.json();
       if(res.status === 404 || res.status === 403) throw new Error('http ' + res.status);
     } catch(e){
-      if(/^http (404|403)$/.test(e.message)) throw e; // real "not found" — don't proxy
+      if(/^http (404|403)$/.test(e.message)) throw e; // real "not found" — stop here
     }
-    // 2) self-hosted instances often lack CORS headers → the browser blocks
-    //    the response. Retry through public CORS proxies (first that works).
+    // 2) CORS-blocked (typical for self-hosted forges) → proxy fallbacks.
+    //    First our own Vercel function (fast + reliable), then public ones.
     const proxies = [
-      x => 'https://corsproxy.io/?url=' + encodeURIComponent(x),
+      x => '/api/repo-proxy?url=' + encodeURIComponent(x),
       x => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(x),
       x => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(x)
     ];
     for(const wrap of proxies){
       try {
-        const ctrl = new AbortController();
-        const timer = setTimeout(() => ctrl.abort(), 8000);
-        const res = await fetch(wrap(u), { signal: ctrl.signal });
-        clearTimeout(timer);
+        const res = await fetchTimed(wrap(u), undefined, 6000);
         if(res.ok) return res.json();
-      } catch(e){ /* try next proxy */ }
+      } catch(e){ /* next proxy */ }
     }
     throw new Error('unreachable');
   }
@@ -906,12 +909,15 @@
       };
     };
 
-    // Known GitLab hosts try GitLab first; everything else tries the
-    // Gitea/Forgejo API first (Codeberg, gitea.com, self-hosted), then
-    // falls back to the other API.
-    const order = isGitlab ? [gitlabFetch, giteaFetch] : [giteaFetch, gitlabFetch];
-    try { return await order[0](); }
-    catch(e){ return order[1](); }
+    // Known GitLab hosts go straight to the GitLab API. Unknown hosts
+    // probe both APIs in parallel — first success wins, so a slow or
+    // failing probe never blocks the other.
+    if(isGitlab) return gitlabFetch();
+    if(typeof Promise.any === 'function'){
+      return Promise.any([giteaFetch(), gitlabFetch()]);
+    }
+    try { return await giteaFetch(); }
+    catch(e){ return gitlabFetch(); }
   }
 
 
