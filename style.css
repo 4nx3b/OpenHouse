@@ -897,3 +897,22 @@ a{ transition:color .25s ease; }
   .story-img{ transition:none; transform:none; }
 }
 }
+
+/* ================= STAR / FEATURED ================= */
+.cat-star{
+  position:absolute; top:10px; right:74px; width:26px; height:26px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,.06); color:var(--text-faint); z-index:2;
+  transition:background .2s, color .2s, transform .2s var(--ease);
+}
+.cat-star:hover{ background:var(--accent-soft); color:var(--accent); }
+.cat-star.is-on{ color:var(--accent); background:var(--accent-soft); }
+.cat-star:active{ transform:scale(.85); }
+@keyframes starPop{ 0%{ transform:scale(1); } 45%{ transform:scale(1.35) rotate(12deg); } 100%{ transform:scale(1); } }
+.cat-star.is-on svg{ animation:starPop .4s var(--ease); }
+
+/* small badge visitors see on featured apps */
+.cat-star-badge{
+  position:absolute; top:10px; right:10px; z-index:2;
+  font-size:13px; color:var(--accent); text-shadow:0 0 10px var(--accent-glow);
+}

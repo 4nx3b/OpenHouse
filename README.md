@@ -79,6 +79,7 @@ create table public.apps (
   license     text default 'MIT',
   repo        text default '',
   thumb       text default '',
+  starred     boolean default false,
   created_at  timestamptz default now()
 );
 
@@ -142,6 +143,14 @@ as $$
 begin
   if not public.owner_check(p_pass) then raise exception 'unauthorized'; end if;
   update public.apps set tags = coalesce(p_tags, '[]'::jsonb) where id = p_id;
+end $$;
+
+create or replace function public.owner_set_star(p_pass text, p_id bigint, p_on boolean)
+returns void language plpgsql security definer set search_path = ''
+as $$
+begin
+  if not public.owner_check(p_pass) then raise exception 'unauthorized'; end if;
+  update public.apps set starred = coalesce(p_on, false) where id = p_id;
 end $$;
 
 create or replace function public.owner_set_meta(p_pass text, p_key text, p_value jsonb)
