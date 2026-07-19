@@ -330,6 +330,7 @@
       }, 30);
       timers.set(line, iv);
     }
+    const storyImgs = $$('.story-img');
     function setActiveLine(ratio){
       const idx = Math.min(storyLines.length - 1, Math.floor(ratio * storyLines.length));
       if(idx === activeIdx) return;
@@ -339,7 +340,11 @@
         line.setAttribute('data-active', on ? 'true' : 'false');
         if(on) typeLine(line);
       });
+      // swap the backdrop image with the line
+      storyImgs.forEach((img, i) => img.classList.toggle('on', i === idx));
     }
+    // show the first image immediately (first line starts active)
+    if(storyImgs[0]) storyImgs[0].classList.add('on');
     if(hasGsap && !reduced){
       ScrollTrigger.create({
         trigger: storySection,
