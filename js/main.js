@@ -194,7 +194,8 @@
   $$('a[href^="#"]').forEach(a => {
     a.addEventListener('click', e => {
       const id = a.getAttribute('href');
-      const target = id.length > 1 ? $(id) : document.body;
+      if(id === '#'){ e.preventDefault(); return; } // popup links handle themselves
+      const target = $(id);
       if(!target) return;
       e.preventDefault();
       if(lenis){ lenis.scrollTo(target, { offset: -10 }); }
@@ -423,17 +424,13 @@
   $('#shortcuts-close') && $('#shortcuts-close').addEventListener('click', () => closeModal(shortcutsOverlay));
   shortcutsOverlay && shortcutsOverlay.addEventListener('click', e => { if(e.target === shortcutsOverlay) closeModal(shortcutsOverlay); });
 
-  /* ============ GUIDELINES + CHANGELOG POPUPS ============ */
-  const guidelinesOverlay = $('#guidelines-overlay');
+  /* ============ CHANGELOG POPUP ============ */
   const changelogOverlay = $('#changelog-overlay');
-  [['#guidelines-link', guidelinesOverlay], ['#guidelines-link-cta', guidelinesOverlay], ['#changelog-link', changelogOverlay]]
-    .forEach(([sel, overlay]) => {
-      const link = $(sel);
-      if(link && overlay) link.addEventListener('click', e => { e.preventDefault(); openModal(overlay); });
-    });
-  $('#guidelines-close') && $('#guidelines-close').addEventListener('click', () => closeModal(guidelinesOverlay));
+  const changelogLink = $('#changelog-link');
+  if(changelogLink && changelogOverlay){
+    changelogLink.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); openModal(changelogOverlay); });
+  }
   $('#changelog-close') && $('#changelog-close').addEventListener('click', () => closeModal(changelogOverlay));
-  guidelinesOverlay && guidelinesOverlay.addEventListener('click', e => { if(e.target === guidelinesOverlay) closeModal(guidelinesOverlay); });
   changelogOverlay && changelogOverlay.addEventListener('click', e => { if(e.target === changelogOverlay) closeModal(changelogOverlay); });
 
   /* ============ KEYBOARD SHORTCUTS ============ */
@@ -450,7 +447,6 @@
       closePalette();
       closeModal(welcomeOverlay);
       closeModal(shortcutsOverlay);
-      guidelinesOverlay && closeModal(guidelinesOverlay);
       changelogOverlay && closeModal(changelogOverlay);
       return;
     }

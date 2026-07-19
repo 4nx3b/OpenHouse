@@ -319,13 +319,14 @@
       : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
+    const editBtn = isAdmin ? `<button class="cat-edit" data-cursor="pointer" aria-label="Edit app" title="Edit app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>` : '';
     const starBtn = isAdmin
       ? `<button class="cat-star ${a.starred ? 'is-on' : ''}" data-cursor="pointer" aria-label="${a.starred ? 'Unstar app' : 'Star app'}" title="${a.starred ? 'Unstar (remove from Featured)' : 'Star (adds to Featured)'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="${a.starred ? 'currentColor' : 'none'}"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6-5.9-3.3-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8L12 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>`
       : (a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '');
     const tagBtn = isAdmin ? `<button class="cat-tags-edit" data-cursor="pointer" aria-label="Edit tags" title="Edit tags"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.3" fill="currentColor"/></svg></button>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
-      ${delBtn}${tagBtn}${starBtn}
+      ${delBtn}${tagBtn}${starBtn}${editBtn}
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
@@ -383,6 +384,12 @@
       if(starBtn) starBtn.addEventListener('click', e => {
         e.stopPropagation();
         toggleStar(card.dataset.cat, card.dataset.name);
+      });
+      const editBtn = card.querySelector('.cat-edit');
+      if(editBtn) editBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const app = UPLOADS.find(a => a.cat === card.dataset.cat && a.name === card.dataset.name);
+        if(app) openUpload(app);
       });
     });
   }
@@ -587,9 +594,10 @@
 
   /* sign-out handling moved into the overflow menu (see above) */
 
-  /* ---------------- UPLOAD FLOW ---------------- */
+  /* ---------------- UPLOAD / EDIT FLOW ---------------- */
   const uploadOverlay = $('#upload-overlay');
   let pickedThumb = null, repoThumb = '';
+  let editingApp = null; // set when the form is editing an existing app
 
   function populateCategorySelect(){
     const sel = $('#up-category');
@@ -603,8 +611,9 @@
     img.hidden = false;
   }
 
-  function openUpload(){
+  function openUpload(editApp){
     closeMenu();
+    editingApp = editApp || null;
     $('#upload-form').reset();
     $('#up-license').value = '';
     $('#up-repo-hint').textContent = 'Paste a GitHub repo URL and we\'ll pull the description automatically.';
@@ -614,6 +623,24 @@
     $('#up-thumb-preview').hidden = true;
     pickedThumb = null; repoThumb = '';
     populateCategorySelect();
+
+    // adapt the modal chrome for edit vs upload
+    const modal = uploadOverlay.querySelector('.upload-modal');
+    modal.querySelector('h3').textContent = editingApp ? 'Edit app' : 'Upload an app';
+    modal.querySelector('.upload-sub').textContent = editingApp
+      ? 'Update the details of this listing.'
+      : 'List a new open source app in the directory.';
+    $('#upload-form').querySelector('button[type="submit"]').textContent =
+      editingApp ? 'Save changes' : 'Publish app';
+
+    if(editingApp){
+      $('#up-name').value = editingApp.name;
+      $('#up-desc').value = editingApp.desc;
+      $('#up-repo').value = editingApp.repo || '';
+      $('#up-license').value = editingApp.license || '';
+      if(ORDER.includes(editingApp.cat)) $('#up-category').value = editingApp.cat;
+      if(editingApp.thumb){ repoThumb = editingApp.thumb; showThumb(editingApp.thumb); }
+    }
     uploadOverlay.classList.add('open');
   }
   function closeUpload(){ uploadOverlay.classList.remove('open'); }
@@ -707,6 +734,41 @@
       thumb: pickedThumb || repoThumb || '',
       starred: false
     };
+
+    /* ----- EDIT MODE: update the existing app in place ----- */
+    if(editingApp){
+      const app = editingApp;
+      const patch = {
+        name, cat, icon: glyphFor(cat),
+        description: obj.desc, license: obj.license,
+        repo: obj.repo,
+        thumb: pickedThumb || app.thumb || repoThumb || ''
+      };
+      if(DB.ready && app.id != null){
+        errEl.textContent = 'Saving…';
+        try { await DB.updateApp(ownerPass, app.id, patch); }
+        catch(err){ errEl.textContent = err.message || 'Save failed.'; return; }
+      }
+      app.name = name;
+      app.cat = cat;
+      app.icon = patch.icon;
+      app.desc = obj.desc;
+      app.license = obj.license;
+      app.repo = obj.repo;
+      app.thumb = patch.thumb;
+      unhideCat(cat);
+      saveUploads();
+      rebuildData();
+      renderGrid();
+      buildPaletteApps();
+      updateStats();
+      render();
+      errEl.textContent = '';
+      editingApp = null;
+      closeUpload();
+      toast('“' + name + '” updated.');
+      return;
+    }
 
     if(DB.ready){
       errEl.textContent = 'Publishing…';

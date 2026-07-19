@@ -45,6 +45,7 @@ window.OpenhouseDB = (function(){
     deleteApp:      (pass, id)       => rpc('owner_delete_app',      { p_pass: pass, p_id: id }),
     setTags:        (pass, id, tags) => rpc('owner_set_tags',        { p_pass: pass, p_id: id, p_tags: tags }),
     setStar:        (pass, id, on)   => rpc('owner_set_star',        { p_pass: pass, p_id: id, p_on: on }),
+    updateApp:      (pass, id, app)  => rpc('owner_update_app',      { p_pass: pass, p_id: id, p_app: app }),
     deleteCategory: (pass, cat)      => rpc('owner_delete_category', { p_pass: pass, p_cat: cat }),
     setMeta:        (pass, key, val) => rpc('owner_set_meta',        { p_pass: pass, p_key: key, p_value: val })
   };
