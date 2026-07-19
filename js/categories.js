@@ -96,9 +96,18 @@
   // Build the initial category/app maps (must run AFTER UPLOADS + DB exist).
   rebuildData();
 
+  /* ---------------- SKELETON LOADING ---------------- */
+  function renderSkeletonGrid(){
+    // shimmer placeholder pills while the database answers
+    grid.innerHTML = Array.from({ length: 8 }, (_, i) =>
+      `<div class="cat-pill skel" style="--i:${i}"><span class="skel-ico"></span><span class="skel-line" style="width:${60 + (i % 4) * 14}px"></span></div>`
+    ).join('');
+  }
+
   /* ---------------- LOAD FROM DATABASE ---------------- */
   async function loadFromDB(){
     if(!DB.ready) return;
+    renderSkeletonGrid();
     try {
       const [apps, meta] = await Promise.all([DB.fetchApps(), DB.fetchMeta()]);
       UPLOADS = apps.map(r => ({
@@ -297,7 +306,7 @@
     render();
     overlay.classList.add('open');
   }
-  function closeCat(){ overlay.classList.remove('open'); if(typeof closeCardMenu === 'function') closeCardMenu(); }
+  function closeCat(){ overlay.classList.remove('open'); if(typeof closeCardMenu === 'function') closeCardMenu(); if(selectMode) exitSelectMode(); }
 
   closeBtn.addEventListener('click', closeCat);
   overlay.addEventListener('click', e => { if(e.target === overlay) closeCat(); });
@@ -317,27 +326,30 @@
     // All apps in one scrollable list (popup size is capped by CSS).
     listEl.innerHTML = apps.length
       ? apps.map((a, i) => cardHTML(a, i)).join('')
-      : `<p class="cat-empty">No apps in this category yet.</p>`;
+      : (cur.cat === 'Featured'
+          ? `<p class="cat-empty">Nothing featured right now — check back soon.</p>`
+          : `<p class="cat-empty">No apps in this category yet.</p>`);
     listEl.scrollTop = 0;
     bindCards();
   }
 
   function cardHTML(a, i){
+    const fallbackIcon = esc(a.icon || glyphFor(a.cat));
     const media = a.thumb
-      ? `<img class="cat-thumb" src="${a.thumb}" alt="${esc(a.name)}" loading="lazy" decoding="async">`
-      : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
+      ? `<img class="cat-thumb" src="${a.thumb}" alt="${esc(a.name)}" loading="lazy" decoding="async" data-fallback="${fallbackIcon}">`
+      : `<span class="app-icon">${fallbackIcon}</span>`;
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
-    const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
-    const menuBtn = isAdmin ? `<button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>` : '';
+    const menuBtn = `<button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>`;
     const starBadge = (a.starred && cur.cat !== 'Featured') ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${Math.min(i*0.05, 0.3).toFixed(2)}s">
       <div class="card-glow"></div>
-      ${delBtn}${menuBtn}${starBadge}
+      ${menuBtn}${starBadge}
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
         <p>${esc(a.desc)}</p>
         <div class="app-tags">${tags}</div>
+        <span class="cat-updated" data-updated hidden></span>
       </div>
     </article>`;
   }
@@ -370,6 +382,13 @@
     $$('.cat-app', listEl).forEach(card => {
       const repo = normalizeRepo(card.dataset.repo);
       card.addEventListener('click', () => {
+        if(selectMode){
+          const name = card.dataset.name;
+          if(selected.has(name)) selected.delete(name); else selected.add(name);
+          card.classList.toggle('selected', selected.has(name));
+          updateBulkBar();
+          return;
+        }
         if(!repo){ toast('No repo linked to this app yet.'); return; }
         // Synthetic anchor click — unlike window.open, this is treated as a
         // normal user navigation by every browser (Firefox blocks the former).
@@ -381,15 +400,6 @@
         a.click();
         a.remove();
       });
-      const del = card.querySelector('.cat-del');
-      if(del) del.addEventListener('click', e => {
-        e.stopPropagation();
-        const name = card.dataset.name;
-        if(name){
-          askConfirm('Delete “' + name + '”? This cannot be undone.', 'Delete app')
-            .then(ok => { if(ok) deleteApp(card.dataset.cat, name); });
-        }
-      });
       const menuBtn = card.querySelector('.cat-menu-btn');
       if(menuBtn) menuBtn.addEventListener('click', e => {
         e.stopPropagation();
@@ -397,6 +407,16 @@
         const app = (BY_CAT[cat] || []).find(a => a.name === name);
         toggleCardMenu(menuBtn, cat, name, !!(app && app.starred));
       });
+      // broken thumbnail → swap in the category glyph
+      const thumb = card.querySelector('.cat-thumb');
+      if(thumb) thumb.addEventListener('error', () => {
+        const span = document.createElement('span');
+        span.className = 'app-icon';
+        span.textContent = thumb.dataset.fallback || '•';
+        thumb.replaceWith(span);
+      }, { once:true });
+      // "updated x ago" line (fetched lazily, cached)
+      fillUpdated(card);
     });
   }
 
@@ -408,9 +428,12 @@
   cardMenu.className = 'cat-menu';
   cardMenu.setAttribute('role', 'menu');
   cardMenu.innerHTML = `
-    <button class="cat-menu-item" data-act="edit" role="menuitem" data-cursor="pointer">Edit app</button>
-    <button class="cat-menu-item" data-act="star" role="menuitem" data-cursor="pointer">Star app</button>
-    <button class="cat-menu-item" data-act="tags" role="menuitem" data-cursor="pointer">Edit tags</button>`;
+    <button class="cat-menu-item" data-act="share" role="menuitem" data-cursor="pointer">Share app</button>
+    <button class="cat-menu-item owner-only" data-act="edit" role="menuitem" data-cursor="pointer">Edit app</button>
+    <button class="cat-menu-item owner-only" data-act="star" role="menuitem" data-cursor="pointer">Star app</button>
+    <button class="cat-menu-item owner-only" data-act="tags" role="menuitem" data-cursor="pointer">Edit tags</button>
+    <button class="cat-menu-item owner-only" data-act="select" role="menuitem" data-cursor="pointer">Select multiple…</button>
+    <button class="cat-menu-item owner-only cat-menu-danger" data-act="delete" role="menuitem" data-cursor="pointer">Delete app</button>`;
   document.body.appendChild(cardMenu);
   let cardMenuCtx = null; // { cat, name }
 
@@ -421,9 +444,10 @@
     }
     cardMenuCtx = { cat, name };
     cardMenu.querySelector('[data-act="star"]').textContent = starred ? 'Unstar' : 'Star app';
+    cardMenu.querySelectorAll('.owner-only').forEach(el => { el.hidden = !isAdmin; });
     // position: below the button, right-aligned; flip up if no room
     const r = btn.getBoundingClientRect();
-    const menuW = 150, menuH = 130, gap = 6, pad = 8;
+    const menuW = 170, menuH = isAdmin ? 260 : 52, gap = 6, pad = 8;
     let left = Math.min(r.right - menuW + 8, window.innerWidth - menuW - pad);
     left = Math.max(pad, left);
     let top = r.bottom + gap;
@@ -445,15 +469,182 @@
       const act = item.dataset.act;
       if(act === 'tags') openTagEditor(ctx.cat, ctx.name);
       else if(act === 'star') toggleStar(ctx.cat, ctx.name);
+      else if(act === 'share') shareApp(ctx.cat, ctx.name);
+      else if(act === 'select') enterSelectMode();
       else if(act === 'edit'){
         const app = UPLOADS.find(a => a.cat === ctx.cat && a.name === ctx.name);
         if(app) openUpload(app);
       }
+      else if(act === 'delete'){
+        askConfirm('Delete “' + ctx.name + '”? This cannot be undone.', 'Delete app')
+          .then(ok => { if(ok) deleteApp(ctx.cat, ctx.name); });
+      }
     });
   });
+
+  /* ---------------- #6 SHARE APP (deep link) ---------------- */
+  function shareApp(cat, name){
+    const url = location.origin + location.pathname + '#app=' + encodeURIComponent(name);
+    const done = () => toast('Link copied — opens straight to this app.');
+    if(navigator.share){
+      navigator.share({ title: name + ' — Openhouse', url }).catch(() => {});
+      return;
+    }
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(url).then(done).catch(() => prompt('Copy this link:', url));
+    } else {
+      prompt('Copy this link:', url);
+    }
+  }
+
+  // deep link: #app=Name opens that app's category popup on load
+  function handleDeepLink(){
+    if(typeof location === 'undefined' || !location.hash) return;
+    const m = location.hash.match(/^#app=(.+)$/);
+    if(!m) return;
+    const name = decodeURIComponent(m[1]);
+    const app = UPLOADS.find(a => a.name.toLowerCase() === name.toLowerCase());
+    if(app) setTimeout(() => openCat(app.cat), 400);
+  }
   // close on outside tap, scroll inside the list, or popup close
   document.addEventListener('click', closeCardMenu);
   if(listEl) listEl.addEventListener('scroll', closeCardMenu, { passive:true });
+
+  /* ---------------- #8 BULK SELECT MODE (owner) ---------------- */
+  let selectMode = false;
+  const selected = new Set(); // app names within cur.cat
+  const bulkBar = document.createElement('div');
+  bulkBar.className = 'bulk-bar';
+  bulkBar.innerHTML = `
+    <span class="bulk-count">0 selected</span>
+    <button class="bulk-btn" data-bulk="star" data-cursor="pointer">Star</button>
+    <button class="bulk-btn" data-bulk="move" data-cursor="pointer">Move</button>
+    <button class="bulk-btn bulk-danger" data-bulk="delete" data-cursor="pointer">Delete</button>
+    <button class="bulk-btn" data-bulk="cancel" data-cursor="pointer">✕</button>`;
+  document.body.appendChild(bulkBar);
+
+  function enterSelectMode(){
+    selectMode = true;
+    selected.clear();
+    updateBulkBar();
+    bulkBar.classList.add('show');
+    render();
+  }
+  function exitSelectMode(){
+    selectMode = false;
+    selected.clear();
+    bulkBar.classList.remove('show');
+    render();
+  }
+  function updateBulkBar(){
+    bulkBar.querySelector('.bulk-count').textContent = selected.size + ' selected';
+  }
+
+  bulkBar.addEventListener('click', async e => {
+    const btn = e.target.closest('.bulk-btn');
+    if(!btn) return;
+    const act = btn.dataset.bulk;
+    if(act === 'cancel'){ exitSelectMode(); return; }
+    if(!selected.size){ toast('Tap cards to select them first.'); return; }
+    const names = Array.from(selected);
+
+    if(act === 'star'){
+      for(const n of names){
+        const app = UPLOADS.find(a => a.cat === cur.cat && a.name === n);
+        if(app && !app.starred) await toggleStar(cur.cat, n);
+      }
+      exitSelectMode();
+      toast(names.length + ' app' + (names.length === 1 ? '' : 's') + ' starred.');
+    }
+    else if(act === 'delete'){
+      const ok = await askConfirm('Delete ' + names.length + ' app' + (names.length === 1 ? '' : 's') + '? This cannot be undone.', 'Delete all');
+      if(!ok) return;
+      for(const n of names) await deleteApp(cur.cat, n, true);
+      exitSelectMode();
+      toast(names.length + ' app' + (names.length === 1 ? '' : 's') + ' deleted.');
+    }
+    else if(act === 'move'){
+      const target = prompt('Move ' + names.length + ' app(s) to which category?\n' +
+        ORDER.filter(c => c !== 'Featured' && c !== cur.cat).join(' · '));
+      if(!target) return;
+      const cat = target.trim();
+      if(!cat || cat === cur.cat) return;
+      for(const n of names){
+        const app = UPLOADS.find(a => a.cat === cur.cat && a.name === n);
+        if(!app) continue;
+        if(DB.ready && app.id != null){
+          try { await DB.updateApp(ownerPass, app.id, { cat }); } catch(err){ toast(err.message); return; }
+        }
+        app.cat = cat;
+      }
+      unhideCat(cat);
+      if(!ORDER.includes(cat)) ORDER.push(cat);
+      saveUploads();
+      rebuildData();
+      renderGrid();
+      buildPaletteApps();
+      updateStats();
+      exitSelectMode();
+      toast('Moved to “' + cat + '”.');
+    }
+  });
+
+  /* ---------------- #9 REPO "UPDATED" TRACKING ---------------- */
+  // Lazily asks the forge API when each repo last had a push. Cached in
+  // localStorage for 24h so browsing stays cheap.
+  const UPD_KEY = 'openhouse-updated-cache';
+  let updCache = loadJSON(UPD_KEY, {});
+  function timeAgo(iso){
+    const then = new Date(iso).getTime();
+    if(isNaN(then)) return '';
+    const days = Math.floor((Date.now() - then) / 86400000);
+    if(days <= 0) return 'updated today';
+    if(days === 1) return 'updated yesterday';
+    if(days < 30) return 'updated ' + days + 'd ago';
+    if(days < 365) return 'updated ' + Math.floor(days / 30) + 'mo ago';
+    return 'updated ' + Math.floor(days / 365) + 'y ago';
+  }
+  async function fetchUpdated(repoUrl){
+    const p = parseRepoUrl(repoUrl);
+    if(!p) return null;
+    const { host, owner, repo } = p;
+    const o = encodeURIComponent(owner), r = encodeURIComponent(repo);
+    try {
+      if(host === 'github.com' || host === 'www.github.com'){
+        const d = await getJSON('https://api.github.com/repos/' + o + '/' + r);
+        return d.pushed_at || d.updated_at || null;
+      }
+      if(host === 'bitbucket.org'){
+        const d = await getJSON('https://api.bitbucket.org/2.0/repositories/' + o + '/' + r);
+        return d.updated_on || null;
+      }
+      if(host === 'gitlab.com' || host.includes('gitlab')){
+        const d = await getJSON('https://' + host + '/api/v4/projects/' + encodeURIComponent(owner + '/' + repo));
+        return d.last_activity_at || null;
+      }
+      const d = await getJSON('https://' + host + '/api/v1/repos/' + o + '/' + r);
+      return d.updated_at || null;
+    } catch(e){ return null; }
+  }
+  const updInFlight = new Set();
+  function fillUpdated(card){
+    const el = card.querySelector('[data-updated]');
+    const repo = normalizeRepo(card.dataset.repo);
+    if(!el || !repo) return;
+    const hit = updCache[repo];
+    if(hit && Date.now() - hit.t < 86400000){
+      if(hit.v){ el.textContent = timeAgo(hit.v); el.hidden = false; }
+      return;
+    }
+    if(updInFlight.has(repo)) return;
+    updInFlight.add(repo);
+    fetchUpdated(repo).then(v => {
+      updInFlight.delete(repo);
+      updCache[repo] = { v, t: Date.now() };
+      try { localStorage.setItem(UPD_KEY, JSON.stringify(updCache)); } catch(e){}
+      if(v && el.isConnected){ el.textContent = timeAgo(v); el.hidden = false; }
+    });
+  }
 
   /* ---------------- STAR / FEATURE (owner only) ---------------- */
   async function toggleStar(cat, name){
@@ -1174,7 +1365,7 @@
     });
   }
 
-  async function deleteApp(cat, name){
+  async function deleteApp(cat, name, silent){
     if(DB.ready){
       const app = (BY_CAT[cat] || []).find(a => a.name === name);
       if(app && app.id != null){
@@ -1189,7 +1380,7 @@
     renderGrid();
     render();
     updateStats();
-    toast('App deleted.');
+    if(!silent) toast('App deleted.');
   }
 
   /* ---------------- MIGRATION (local → database, one-time) ----------------
@@ -1224,15 +1415,23 @@
   refreshAdminUI();
   buildPaletteApps();
   if(DB.ready){
-    loadFromDB().then(maybeMigrateLocal);
+    loadFromDB().then(() => { handleDeepLink(); maybeMigrateLocal(); });
+  } else {
+    handleDeepLink();
   }
+  window.addEventListener('hashchange', handleDeepLink);
 
   // Keep the hero stats in sync with the real (incl. uploaded) totals.
   function updateStats(){
     const statNums = $$('.stats .stat-num');
-    const totalApps = Object.keys(BY_CAT).reduce((n, c) => n + BY_CAT[c].length, 0);
+    const totalApps = UPLOADS.length;
     if(statNums[0]) statNums[0].dataset.count = totalApps;
     if(statNums[1]) statNums[1].dataset.count = ORDER.length;
+    // keep hero + CTA copy in sync with the real count
+    const hero = $('#hero-app-count');
+    if(hero && totalApps) hero.textContent = totalApps + '+';
+    const cta = $('#cta-app-count');
+    if(cta && totalApps) cta.textContent = totalApps + ' apps and counting ·';
   }
   updateStats();
 })();
