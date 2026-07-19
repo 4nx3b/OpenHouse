@@ -646,6 +646,79 @@
     const sel = $('#up-category');
     sel.innerHTML = ORDER.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
       + `<option value="__new__">＋ Create new category</option>`;
+    syncSelectButton();
+  }
+
+  /* ---------------- CUSTOM CATEGORY DROPDOWN ----------------
+     The native <select> stays in the DOM (hidden) as the source of
+     truth — the visible button + blurred menu mirror it, so every
+     existing read of $('#up-category').value keeps working. */
+  const catSelect = $('#up-category');
+  let selectBtn = null, selectMenu = null;
+
+  function syncSelectButton(){
+    if(!selectBtn || !catSelect) return;
+    const opt = catSelect.options[catSelect.selectedIndex];
+    selectBtn.textContent = opt ? opt.textContent : 'Choose a category';
+  }
+
+  if(catSelect && catSelect.parentNode){
+    catSelect.classList.add('native-hidden');
+
+    selectBtn = document.createElement('button');
+    selectBtn.type = 'button';
+    selectBtn.className = 'select-btn';
+    selectBtn.setAttribute('aria-haspopup', 'listbox');
+    catSelect.parentNode.insertBefore(selectBtn, catSelect.nextSibling);
+
+    selectMenu = document.createElement('div');
+    selectMenu.className = 'select-menu';
+    selectMenu.setAttribute('role', 'listbox');
+    document.body.appendChild(selectMenu);
+
+    function closeSelectMenu(){ selectMenu.classList.remove('open'); }
+
+    function openSelectMenu(){
+      // rebuild items from the native options
+      selectMenu.innerHTML = '';
+      Array.from(catSelect.options).forEach(opt => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'select-item' + (opt.selected ? ' active' : '');
+        b.textContent = opt.textContent;
+        b.addEventListener('click', () => {
+          catSelect.value = opt.value;
+          catSelect.dispatchEvent(new Event('change', { bubbles:true }));
+          syncSelectButton();
+          closeSelectMenu();
+        });
+        selectMenu.appendChild(b);
+      });
+      // position under the button (fixed coords, flip up if needed)
+      const r = selectBtn.getBoundingClientRect();
+      const pad = 8, gap = 6;
+      const menuH = Math.min(window.innerHeight * 0.46, catSelect.options.length * 42 + 10);
+      let top = r.bottom + gap;
+      const flipUp = top + menuH > window.innerHeight - pad;
+      if(flipUp) top = Math.max(pad, r.top - gap - menuH);
+      selectMenu.style.left = r.left + 'px';
+      selectMenu.style.width = r.width + 'px';
+      selectMenu.style.top = top + 'px';
+      selectMenu.classList.toggle('up', flipUp);
+      selectMenu.classList.add('open');
+    }
+
+    selectBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      selectMenu.classList.contains('open') ? closeSelectMenu() : openSelectMenu();
+    });
+    selectMenu.addEventListener('click', e => e.stopPropagation());
+    document.addEventListener('click', closeSelectMenu);
+    // close when the upload modal itself scrolls (button moves)
+    const uploadModalEl = document.querySelector('.upload-modal');
+    if(uploadModalEl) uploadModalEl.addEventListener('scroll', closeSelectMenu, { passive:true });
+    document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSelectMenu(); });
+    catSelect.addEventListener('change', syncSelectButton);
   }
 
   function showThumb(src){
@@ -681,7 +754,7 @@
       $('#up-desc').value = editingApp.desc;
       $('#up-repo').value = editingApp.repo || '';
       $('#up-license').value = editingApp.license || '';
-      if(ORDER.includes(editingApp.cat)) $('#up-category').value = editingApp.cat;
+      if(ORDER.includes(editingApp.cat)){ $('#up-category').value = editingApp.cat; syncSelectButton(); }
       if(editingApp.thumb){ repoThumb = editingApp.thumb; showThumb(editingApp.thumb); }
     }
     uploadOverlay.classList.add('open');
