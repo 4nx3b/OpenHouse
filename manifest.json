@@ -1,5 +1,5 @@
 {
-  "name": "Openhouse — Open source apps",
+  "name": "Openhouse \u2014 Open source apps",
   "short_name": "Openhouse",
   "description": "A curated directory of open source apps. No telemetry, no lock-in, free forever.",
   "start_url": "/",
@@ -7,8 +7,22 @@
   "background_color": "#07070a",
   "theme_color": "#07070a",
   "icons": [
-    { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "img/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
-  ]
+    {
+      "src": "img/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "img/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "img/icon-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "id": "/"
 }

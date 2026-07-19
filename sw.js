@@ -3,10 +3,9 @@
    Cache-first for the app shell (instant loads, offline support);
    network-first for the Supabase API so data stays fresh.
    ============================================================ */
-const VERSION = 'openhouse-v1';
+const VERSION = 'openhouse-v3';
 const SHELL = [
   '/',
-  '/index.html',
   '/style.css',
   '/js/config.js',
   '/js/db.js',
@@ -22,7 +21,9 @@ const SHELL = [
 
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(VERSION).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())
+    caches.open(VERSION)
+      .then(c => Promise.allSettled(SHELL.map(u => c.add(u))))
+      .then(() => self.skipWaiting())
   );
 });
 
@@ -49,6 +50,12 @@ self.addEventListener('fetch', e => {
         })
         .catch(() => caches.match(e.request))
     );
+    return;
+  }
+
+  // navigations: network first, cached shell as offline fallback
+  if (e.request.mode === 'navigate') {
+    e.respondWith(fetch(e.request).catch(() => caches.match('/')));
     return;
   }
 
