@@ -765,7 +765,7 @@
     editingApp = editApp || null;
     $('#upload-form').reset();
     $('#up-license').value = '';
-    $('#up-repo-hint').textContent = 'Paste a GitHub repo URL and we\'ll pull the description automatically.';
+    $('#up-repo-hint').textContent = 'Paste a repo URL and I\'ll pull the description automatically.';
     $('#upload-error').textContent = '';
     $('#up-newcat-field').hidden = true;
     if($('#up-newcat-icon-field')) $('#up-newcat-icon-field').hidden = true;
@@ -833,9 +833,32 @@
   }
 
   async function getJSON(u, headers){
-    const res = await fetch(u, headers ? { headers } : undefined);
-    if(!res.ok) throw new Error('http ' + res.status);
-    return res.json();
+    // 1) direct — works for hosts that send CORS headers (GitHub, GitLab,
+    //    Codeberg, Bitbucket, most gitea.com repos)
+    try {
+      const res = await fetch(u, headers ? { headers } : undefined);
+      if(res.ok) return res.json();
+      if(res.status === 404 || res.status === 403) throw new Error('http ' + res.status);
+    } catch(e){
+      if(/^http (404|403)$/.test(e.message)) throw e; // real "not found" — don't proxy
+    }
+    // 2) self-hosted instances often lack CORS headers → the browser blocks
+    //    the response. Retry through public CORS proxies (first that works).
+    const proxies = [
+      x => 'https://corsproxy.io/?url=' + encodeURIComponent(x),
+      x => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(x),
+      x => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(x)
+    ];
+    for(const wrap of proxies){
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 8000);
+        const res = await fetch(wrap(u), { signal: ctrl.signal });
+        clearTimeout(timer);
+        if(res.ok) return res.json();
+      } catch(e){ /* try next proxy */ }
+    }
+    throw new Error('unreachable');
   }
 
   async function fetchRepo(url){
