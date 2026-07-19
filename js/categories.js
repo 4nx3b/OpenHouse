@@ -319,14 +319,19 @@
       : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
-    const editBtn = isAdmin ? `<button class="cat-edit" data-cursor="pointer" aria-label="Edit app" title="Edit app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M17 3a2.8 2.8 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button>` : '';
-    const starBtn = isAdmin
-      ? `<button class="cat-star ${a.starred ? 'is-on' : ''}" data-cursor="pointer" aria-label="${a.starred ? 'Unstar app' : 'Star app'}" title="${a.starred ? 'Unstar (remove from Featured)' : 'Star (adds to Featured)'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="${a.starred ? 'currentColor' : 'none'}"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6-5.9-3.3-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8L12 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>`
-      : (a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '');
-    const tagBtn = isAdmin ? `<button class="cat-tags-edit" data-cursor="pointer" aria-label="Edit tags" title="Edit tags"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.3" fill="currentColor"/></svg></button>` : '';
+    const menuBtn = isAdmin ? `
+      <div class="cat-menu-wrap">
+        <button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
+        <div class="cat-menu" role="menu">
+          <button class="cat-menu-item" data-act="edit" role="menuitem" data-cursor="pointer">Edit app</button>
+          <button class="cat-menu-item" data-act="star" role="menuitem" data-cursor="pointer">${a.starred ? 'Unstar' : 'Star app'}</button>
+          <button class="cat-menu-item" data-act="tags" role="menuitem" data-cursor="pointer">Edit tags</button>
+        </div>
+      </div>` : '';
+    const starBadge = a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
-      ${delBtn}${tagBtn}${starBtn}${editBtn}
+      ${delBtn}${menuBtn}${starBadge}
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
@@ -375,24 +380,37 @@
           deleteApp(card.dataset.cat, name);
         }
       });
-      const tagBtn = card.querySelector('.cat-tags-edit');
-      if(tagBtn) tagBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        openTagEditor(card.dataset.cat, card.dataset.name);
-      });
-      const starBtn = card.querySelector('.cat-star');
-      if(starBtn) starBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        toggleStar(card.dataset.cat, card.dataset.name);
-      });
-      const editBtn = card.querySelector('.cat-edit');
-      if(editBtn) editBtn.addEventListener('click', e => {
-        e.stopPropagation();
-        const app = UPLOADS.find(a => a.cat === card.dataset.cat && a.name === card.dataset.name);
-        if(app) openUpload(app);
-      });
+      const menuWrap = card.querySelector('.cat-menu-wrap');
+      if(menuWrap){
+        const menu = menuWrap.querySelector('.cat-menu');
+        menuWrap.querySelector('.cat-menu-btn').addEventListener('click', e => {
+          e.stopPropagation();
+          // close any other open card menu first
+          $$('.cat-menu.open', listEl).forEach(m => { if(m !== menu) m.classList.remove('open'); });
+          menu.classList.toggle('open');
+        });
+        menu.querySelectorAll('.cat-menu-item').forEach(item => {
+          item.addEventListener('click', e => {
+            e.stopPropagation();
+            menu.classList.remove('open');
+            const act = item.dataset.act;
+            const cat = card.dataset.cat, name = card.dataset.name;
+            if(act === 'tags') openTagEditor(cat, name);
+            else if(act === 'star') toggleStar(cat, name);
+            else if(act === 'edit'){
+              const app = UPLOADS.find(a => a.cat === cat && a.name === name);
+              if(app) openUpload(app);
+            }
+          });
+        });
+      }
     });
   }
+
+  // close any open card menu on outside taps
+  document.addEventListener('click', () => {
+    $$('.cat-menu.open').forEach(m => m.classList.remove('open'));
+  });
 
   /* ---------------- STAR / FEATURE (owner only) ---------------- */
   async function toggleStar(cat, name){
