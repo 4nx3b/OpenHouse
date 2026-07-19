@@ -50,16 +50,60 @@ kbd{
 /* ================= LOADER ================= */
 .loader{
   position:fixed;inset:0;z-index:200;background:var(--bg);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;
-  transition:opacity .6s var(--ease), visibility .6s var(--ease);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;
+  transition:opacity .55s var(--ease), visibility .55s var(--ease), transform .55s var(--ease);
 }
-.loader.hide{opacity:0;visibility:hidden;pointer-events:none;}
-.loader-mark{color:var(--accent);}
-#loader-path{stroke-dasharray:180;stroke-dashoffset:180;animation:loader-draw 1.6s var(--ease) infinite;}
-@keyframes loader-draw{ 0%{stroke-dashoffset:180;} 50%{stroke-dashoffset:0;} 100%{stroke-dashoffset:-180;} }
-.loader-bar{width:160px;height:2px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
-.loader-bar span{display:block;height:100%;width:0%;background:var(--accent);transition:width .25s ease;}
-.loader-label{font-family:var(--font-mono);font-size:11px;color:var(--text-faint);letter-spacing:.05em;}
+/* exit: gentle zoom-through instead of a flat fade */
+.loader.hide{opacity:0;visibility:hidden;pointer-events:none;transform:scale(1.06);}
+
+/* brand squares breathe in a wave */
+.loader-logo{ position:relative; }
+.lq{
+  stroke:var(--accent); stroke-width:1.8; fill:rgba(255,180,84,0);
+  transform-origin:center; transform-box:fill-box;
+  animation:lqPulse 1.5s cubic-bezier(.45,0,.25,1) infinite;
+}
+.lq2{ animation-delay:.12s; }
+.lq3{ animation-delay:.24s; }
+.lq4{ animation-delay:.36s; }
+@keyframes lqPulse{
+  0%, 100%{ transform:scale(1); fill:rgba(255,180,84,0); opacity:.45; }
+  35%{ transform:scale(1.12); fill:rgba(255,180,84,.32); opacity:1; }
+}
+/* soft breathing glow behind the mark */
+.loader-glow{
+  position:absolute; inset:-26px; border-radius:50%; z-index:-1;
+  background:radial-gradient(circle, rgba(255,180,84,.16), transparent 70%);
+  animation:loaderGlow 2.4s ease-in-out infinite;
+}
+@keyframes loaderGlow{ 0%,100%{ opacity:.4; transform:scale(.9); } 50%{ opacity:1; transform:scale(1.1); } }
+
+/* progress: slim track, gradient fill with a moving sheen */
+.loader-track{
+  width:180px; height:3px; border-radius:3px; overflow:hidden;
+  background:rgba(255,255,255,.07);
+}
+.loader-fill{
+  display:block; height:100%; width:0%;
+  border-radius:3px;
+  background:linear-gradient(90deg, var(--accent), #ffd9a0, var(--accent));
+  background-size:200% 100%;
+  animation:fillSheen 1.2s linear infinite;
+  transition:width .45s cubic-bezier(.3,.9,.3,1);
+  box-shadow:0 0 12px var(--accent-glow);
+}
+@keyframes fillSheen{ from{ background-position:0% 0; } to{ background-position:-200% 0; } }
+
+.loader-label{
+  font-family:var(--font-mono);font-size:12px;color:var(--text-faint);letter-spacing:.08em;
+  display:flex;align-items:baseline;gap:1px;
+}
+.loader-label em{ font-style:normal; font-size:10px; color:var(--text-faint); opacity:.7; }
+#loader-pct{ color:var(--text-dim); font-variant-numeric:tabular-nums; }
+
+@media (prefers-reduced-motion: reduce){
+  .lq, .loader-glow, .loader-fill{ animation:none; }
+}
 
 /* ================= AMBIENT LAYERS (scoped to hero only — cheaper than full-page) ================= */
 #particles{position:absolute;top:0;left:0;width:100%;height:100%;z-index:0;pointer-events:none;opacity:.6;}

@@ -3,7 +3,7 @@
    Cache-first for the app shell (instant loads, offline support);
    network-first for the Supabase API so data stays fresh.
    ============================================================ */
-const VERSION = 'openhouse-v8';
+const VERSION = 'openhouse-v9';
 const SHELL = [
   '/',
   '/style.css',

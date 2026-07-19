@@ -31,11 +31,17 @@
 
 <!-- ============ LOADING SCREEN ============ -->
 <div class="loader" id="loader">
-  <svg class="loader-mark" width="64" height="64" viewBox="0 0 64 64" fill="none">
-    <path id="loader-path" d="M32 4 C16 4 4 16 4 32 C4 48 16 60 32 60 C48 60 60 48 60 32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
-  </svg>
-  <div class="loader-bar"><span id="loader-fill"></span></div>
-  <p class="loader-label" id="loader-pct">0%</p>
+  <div class="loader-logo" aria-hidden="true">
+    <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
+      <rect class="lq lq1" x="3" y="3" width="7" height="7" rx="1.8"/>
+      <rect class="lq lq2" x="14" y="3" width="7" height="7" rx="1.8"/>
+      <rect class="lq lq3" x="3" y="14" width="7" height="7" rx="1.8"/>
+      <rect class="lq lq4" x="14" y="14" width="7" height="7" rx="1.8"/>
+    </svg>
+    <div class="loader-glow"></div>
+  </div>
+  <div class="loader-track"><span class="loader-fill" id="loader-fill"></span></div>
+  <p class="loader-label"><span id="loader-pct">0</span><em>%</em></p>
 </div>
 
 <!-- ============ AMBIENT LAYERS ============ -->
