@@ -105,7 +105,12 @@
   // Owner password is kept for the session so DB writes can be authorised
   // server-side (Supabase re-checks it on every write).
   let ownerPass = '';
-  try { ownerPass = sessionStorage.getItem('openhouse-pass') || ''; } catch(e){}
+  // Persistent sign-in: survives tab/browser restarts (localStorage).
+  // Migrates any old sessionStorage state on first run.
+  try {
+    ownerPass = localStorage.getItem('openhouse-pass') || sessionStorage.getItem('openhouse-pass') || '';
+    if(ownerPass && !localStorage.getItem('openhouse-pass')) localStorage.setItem('openhouse-pass', ownerPass);
+  } catch(e){}
 
   // Build the initial category/app maps (must run AFTER UPLOADS + DB exist).
   rebuildData();
@@ -779,7 +784,10 @@
   // With Supabase active, the password is verified server-side instead.
   const ADMIN_HASH = '8e9d4e65';
   let isAdmin = false;
-  try { isAdmin = sessionStorage.getItem('openhouse-admin') === '1'; } catch(e){}
+  try {
+    isAdmin = localStorage.getItem('openhouse-admin') === '1' || sessionStorage.getItem('openhouse-admin') === '1';
+    if(isAdmin) localStorage.setItem('openhouse-admin', '1');
+  } catch(e){}
 
   function hashStr(str){
     let h = 5381;
@@ -818,6 +826,8 @@
     isAdmin = false;
     ownerPass = '';
     try {
+      localStorage.removeItem('openhouse-admin');
+      localStorage.removeItem('openhouse-pass');
       sessionStorage.removeItem('openhouse-admin');
       sessionStorage.removeItem('openhouse-pass');
     } catch(e){}
@@ -866,8 +876,8 @@
     isAdmin = true;
     ownerPass = pass;
     try {
-      sessionStorage.setItem('openhouse-admin', '1');
-      sessionStorage.setItem('openhouse-pass', pass);
+      localStorage.setItem('openhouse-admin', '1');
+      localStorage.setItem('openhouse-pass', pass);
     } catch(e2){}
     refreshAdminUI();
     closeLogin();
