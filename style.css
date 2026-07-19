@@ -278,7 +278,15 @@ kbd{
   width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;
   color:var(--text-dim);position:relative;transition:transform .25s var(--ease), color .25s ease, background .25s ease;
 }
-.dock a:hover,.dock button:hover{transform:translateY(-8px) scale(1.12);color:var(--accent);background:rgba(255,255,255,.06);}
+/* lift only on devices that actually hover (mouse) — on touch the
+   'sticky hover' made icons jump up when tapped */
+@media (hover:hover){
+  .dock a:hover,.dock button:hover{transform:translateY(-8px) scale(1.12);color:var(--accent);background:rgba(255,255,255,.06);}
+}
+/* active section: icon fills in amber instead of moving */
+.dock a.active,.dock button.active{color:var(--accent);background:rgba(255,180,84,.1);}
+.dock a.active svg *,.dock button.active svg *{fill:var(--accent);stroke:var(--accent);}
+.dock a:active,.dock button:active{transform:scale(.92);}
 .dock a::after,.dock button::after{
   content:attr(data-label);position:absolute;bottom:52px;left:50%;transform:translateX(-50%);
   font-family:var(--font-mono);font-size:10.5px;background:#000;border:1px solid var(--panel-border);
@@ -358,10 +366,6 @@ kbd{
 .pages-pill .pg.active{ background:var(--accent); color:#0a0a0a; font-weight:600; }
 .pages-pill .pg:disabled{ opacity:.3; cursor:default; }
 
-.sort-pill{ display:inline-flex; align-items:center; padding:4px; border-radius:100px; background:var(--panel); border:1px solid var(--panel-border); margin-left:auto; }
-.sort-pill .sort-opt{ padding:7px 15px; border-radius:100px; font-size:12.5px; font-weight:600; color:var(--text-dim); cursor:pointer; transition:background .2s,color .2s; }
-.sort-pill .sort-opt:hover{ color:var(--text); }
-.sort-pill .sort-opt.active{ background:var(--accent); color:#0a0a0a; }
 
 .cat-app-list{ overflow-y:auto; margin-top:18px; display:grid; grid-template-columns:1fr 1fr; align-items:start; align-content:start; gap:12px; padding-right:6px; flex:1; min-height:0; }
 .cat-app{ position:relative; overflow:visible; height:auto; padding:18px 16px; border-radius:var(--radius-md); background:var(--panel); border:1px solid var(--panel-border); display:flex; gap:13px; transform-style:preserve-3d; transition:transform .1s ease, border-color .3s ease; }
@@ -631,8 +635,8 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 @keyframes ping{ 0%{ transform:scale(.6); opacity:.8; } 80%,100%{ transform:scale(2.2); opacity:0; } }
 
 /* --- sort + page buttons: press feedback --- */
-.pages-pill .pg:active, .sort-pill .sort-opt:active{ transform:scale(.9); }
-.pages-pill .pg, .sort-pill .sort-opt{ transition:background .2s, color .2s, transform .15s var(--ease); }
+.pages-pill .pg:active{ transform:scale(.9); }
+.pages-pill .pg{ transition:background .2s, color .2s, transform .15s var(--ease); }
 
 /* --- brand mark: slow spin of the grid squares on hover --- */
 .brand svg{ transition:transform .6s var(--ease); }
@@ -717,8 +721,6 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 @keyframes pgPop{ 0%{ transform:scale(.7); } 60%{ transform:scale(1.15); } 100%{ transform:scale(1); } }
 .pages-pill .pg.active{ animation:pgPop .3s var(--ease); }
 
-/* sort toggle: same pop */
-.sort-pill .sort-opt.active{ animation:pgPop .3s var(--ease); }
 
 /* category popup content cascades in */
 .modal-overlay.open .cat-modal .cat-toolbar{ animation:rowIn .45s var(--ease) .05s both; }
@@ -740,9 +742,10 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 ::selection{ background:rgba(255,180,84,.28); color:var(--text); }
 
 /* smooth focus rings for keyboard users */
-a:focus-visible, button:focus-visible, input:focus-visible{
+a:focus-visible, button:focus-visible{
   outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;
 }
+input:focus, input:focus-visible, textarea:focus, textarea:focus-visible{ outline:none; }
 
 @media (prefers-reduced-motion: reduce){
   .typewrite .tw-live{ position:static; }
@@ -757,3 +760,78 @@ a:focus-visible, button:focus-visible, input:focus-visible{
   background:var(--accent); box-shadow:0 0 14px var(--accent-glow);
   animation:caretBlink .85s steps(1) infinite;
 }
+
+/* ============================================================
+   STORY SECTION — animated gradient text while scrolling through
+   (ends naturally when the Directory section takes over)
+   ============================================================ */
+.story{
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 50%, rgba(255,180,84,.05), transparent 70%);
+}
+.story-line[data-active="true"]{
+  background:linear-gradient(100deg,
+    var(--text) 0%, var(--text) 28%,
+    var(--accent) 42%, #ffd9a0 50%, var(--accent) 58%,
+    var(--text) 72%, var(--text) 100%);
+  background-size:220% 100%;
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+  animation:storyShimmer 3.2s linear infinite;
+}
+@keyframes storyShimmer{
+  from{ background-position:120% 0; }
+  to{ background-position:-120% 0; }
+}
+/* caret needs a solid color again (text-fill is transparent) */
+.story-line.tw-typing-line::after{ -webkit-text-fill-color:initial; }
+
+@media (prefers-reduced-motion: reduce){
+  .story-line[data-active="true"]{
+    animation:none; background:none;
+    -webkit-text-fill-color:currentColor; color:var(--text);
+  }
+}
+
+/* ============================================================
+   POLISH ROUND 4
+   ============================================================ */
+
+/* hero sub + actions drift up with slight delay after title types in */
+body.loaded .hero-sub.reveal-up.in{ transition-delay:.15s; }
+body.loaded .hero-actions.reveal-up.in{ transition-delay:.3s; }
+
+/* stat numbers get a tiny pop when they finish counting */
+@keyframes statSettle{ 0%{ transform:scale(1); } 40%{ transform:scale(1.12); } 100%{ transform:scale(1); } }
+.stat-num.done{ animation:statSettle .45s var(--ease); }
+
+/* category pills: gentle breathing glow on the icon dot */
+.cat-pill .cat-ico{ position:relative; }
+
+/* modal overlays: backdrop fades + slight zoom-out of page behind */
+.modal-overlay{ transition:opacity .3s ease, visibility .3s ease, backdrop-filter .3s ease; }
+
+/* pagination arrows nudge in their direction on hover */
+@media (hover:hover){
+  .pages-pill .pg.prev:hover:not(:disabled){ transform:translateX(-2px); }
+  .pages-pill .pg.next:hover:not(:disabled){ transform:translateX(2px); }
+}
+
+/* toast dot pulses while visible */
+.toast .dot{ animation:blink 1.6s ease-in-out infinite; }
+
+/* marquee items brighten on hover */
+.marquee-track span{ transition:color .3s ease; }
+.marquee:hover .marquee-track span{ color:var(--text-dim); }
+
+/* thumbnails get a soft ring on hover */
+.cat-thumb{ transition:box-shadow .3s ease, transform .35s var(--ease); }
+.cat-app:hover .cat-thumb{ box-shadow:0 0 0 2px rgba(255,180,84,.35); }
+
+/* upload/publish buttons: pulse while form is submitting via aria-busy */
+[aria-busy="true"]{ animation:blink 1s ease-in-out infinite; pointer-events:none; }
+
+/* smooth color transition on all links */
+a{ transition:color .25s ease; }
