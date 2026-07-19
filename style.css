@@ -749,8 +749,13 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 ::selection{ background:rgba(255,180,84,.28); color:var(--text); }
 
 /* smooth focus rings for keyboard users */
+/* follow each element's own shape (don't force a square radius) */
 a:focus-visible, button:focus-visible{
-  outline:2px solid var(--accent); outline-offset:3px; border-radius:6px;
+  outline:2px solid var(--accent); outline-offset:3px;
+}
+/* touch devices: taps shouldn't leave a lingering focus ring */
+@media (hover:none){
+  a:focus-visible, button:focus-visible, a:focus, button:focus{ outline:none; }
 }
 input:focus, input:focus-visible, textarea:focus, textarea:focus-visible{ outline:none; }
 
