@@ -433,6 +433,21 @@
   </div>
 </div>
 
+<!-- ============ CONFIRM DIALOG ============ -->
+<div class="modal-overlay" id="confirm-overlay">
+  <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
+    <div class="confirm-icon" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h3 id="confirm-title">Are you sure?</h3>
+    <p id="confirm-msg">This cannot be undone.</p>
+    <div class="upload-actions confirm-actions">
+      <button type="button" class="btn btn-outline" id="confirm-cancel" data-cursor="pointer">Cancel</button>
+      <button type="button" class="btn btn-danger" id="confirm-ok" data-cursor="pointer">Delete</button>
+    </div>
+  </div>
+</div>
+
 <!-- ============ TOASTS ============ -->
 <div class="toast-stack" id="toast-stack"></div>
 
