@@ -512,6 +512,17 @@
     }
   }
 
+  /* Scroll the popup list to a specific app card and flash it */
+  function scrollToApp(name){
+    setTimeout(() => {
+      const card = $$('.cat-app', listEl).find(c => c.dataset.name === name);
+      if(!card) return;
+      card.scrollIntoView({ behavior:'smooth', block:'center' });
+      card.classList.add('located');
+      setTimeout(() => card.classList.remove('located'), 2200);
+    }, 380); // wait for the popup + card entrance animations
+  }
+
   // deep link: #app=Name opens that app's category popup on load
   function handleDeepLink(){
     if(typeof location === 'undefined' || !location.hash) return;
@@ -519,7 +530,7 @@
     if(!m) return;
     const name = decodeURIComponent(m[1]);
     const app = UPLOADS.find(a => a.name.toLowerCase() === name.toLowerCase());
-    if(app) setTimeout(() => openCat(app.cat), 400);
+    if(app) setTimeout(() => { openCat(app.cat); scrollToApp(app.name); }, 400);
   }
   // close on outside tap, scroll inside the list, or popup close
   document.addEventListener('click', closeCardMenu);
@@ -764,12 +775,9 @@
   }
 
   /* ---------------- OWNER AUTH ---------------- */
-  // NOTE: This is a client-side gate. The password hash lives in the
-  // shipped JS, so it is NOT a substitute for a real server. It keeps the
-  // upload UI out of casual view on a personal site. To change the password:
-  //   node -e "let h=5381;for(const c of 'YOURPASSWORD')h=((h<<5)+h+c.charCodeAt(0))>>>0;console.log(h.toString(16))"
-  // then replace ADMIN_HASH below.
-  const ADMIN_HASH = '8e9d4e65'; // password: #Kshitij@2131
+  // Fallback gate used only when the database isn't configured (local dev).
+  // With Supabase active, the password is verified server-side instead.
+  const ADMIN_HASH = '8e9d4e65';
   let isAdmin = false;
   try { isAdmin = sessionStorage.getItem('openhouse-admin') === '1'; } catch(e){}
 
@@ -1384,7 +1392,7 @@
     const results = $('#palette-results');
     if(!results) return;
     results.innerHTML = '';
-    function addItem(searchText, html, cat){
+    function addItem(searchText, html, cat, appName){
       const li = document.createElement('li');
       li.className = 'palette-app';
       li.dataset.search = searchText.toLowerCase();
@@ -1393,6 +1401,7 @@
         const ov = $('#palette-overlay');
         if(ov) ov.classList.remove('open');
         openCat(cat);
+        if(appName) scrollToApp(appName);
       });
       results.appendChild(li);
     }
@@ -1403,7 +1412,7 @@
     ORDER.forEach(cat => {
       (BY_CAT[cat] || []).forEach(app => {
         addItem(app.name + ' ' + cat + ' ' + (app.repo || ''),
-          `<span>${esc(app.name)} <em>${esc(cat)}</em></span><em>App</em>`, cat);
+          `<span>${esc(app.name)} <em>${esc(cat)}</em></span><em>App</em>`, cat, app.name);
       });
     });
   }
