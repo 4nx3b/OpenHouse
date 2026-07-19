@@ -734,23 +734,30 @@
 
   /* ---------------- PALETTE APPS + DELETE ---------------- */
   function buildPaletteApps(){
+    // Search results: categories + apps only.
     const results = $('#palette-results');
     if(!results) return;
-    results.querySelectorAll('.palette-app').forEach(n => n.remove());
+    results.innerHTML = '';
+    function addItem(searchText, html, cat){
+      const li = document.createElement('li');
+      li.className = 'palette-app';
+      li.dataset.search = searchText.toLowerCase();
+      li.innerHTML = html;
+      li.addEventListener('click', () => {
+        const ov = $('#palette-overlay');
+        if(ov) ov.classList.remove('open');
+        openCat(cat);
+      });
+      results.appendChild(li);
+    }
+    ORDER.forEach(cat => {
+      const n = (BY_CAT[cat] || []).length;
+      addItem(cat, `<span>${esc(glyphFor(cat))} ${esc(cat)}</span><em>Category · ${n}</em>`, cat);
+    });
     ORDER.forEach(cat => {
       (BY_CAT[cat] || []).forEach(app => {
-        const li = document.createElement('li');
-        li.className = 'palette-app';
-        li.dataset.href = '#apps';
-        li.dataset.cat = cat;
-        li.dataset.search = (app.name + ' ' + cat + ' ' + (app.repo || '')).toLowerCase();
-        li.innerHTML = `<span>${esc(app.name)} <em>${esc(cat)}</em></span><em>App</em>`;
-        li.addEventListener('click', () => {
-          const ov = $('#palette-overlay');
-          if(ov) ov.classList.remove('open');
-          openCat(cat);
-        });
-        results.appendChild(li);
+        addItem(app.name + ' ' + cat + ' ' + (app.repo || ''),
+          `<span>${esc(app.name)} <em>${esc(cat)}</em></span><em>App</em>`, cat);
       });
     });
   }
@@ -806,17 +813,6 @@
   buildPaletteApps();
   if(DB.ready){
     loadFromDB().then(maybeMigrateLocal);
-  }
-
-  const paletteInput = $('#palette-input');
-  if(paletteInput){
-    paletteInput.addEventListener('input', e => {
-      const q = e.target.value.trim().toLowerCase();
-      $$('#palette-results li').forEach(li => {
-        const hay = (li.dataset.search || li.textContent || '').toLowerCase();
-        li.classList.toggle('hidden', !hay.includes(q));
-      });
-    });
   }
 
   // Keep the hero stats in sync with the real (incl. uploaded) totals.

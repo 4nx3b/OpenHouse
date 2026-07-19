@@ -368,8 +368,6 @@
   /* ============ COMMAND PALETTE ============ */
   const paletteOverlay = $('#palette-overlay');
   const paletteInput = $('#palette-input');
-  const paletteResults = $('#palette-results');
-  const paletteItems = $$('#palette-results li');
 
   function openPalette(){
     paletteOverlay.classList.add('open');
@@ -382,22 +380,13 @@
   function closePalette(){ paletteOverlay.classList.remove('open'); }
   function filterPalette(q){
     const query = q.trim().toLowerCase();
-    paletteItems.forEach(li => {
-      const match = li.textContent.toLowerCase().includes(query);
-      li.classList.toggle('hidden', !match);
+    $$('#palette-results li').forEach(li => {
+      const hay = (li.dataset.search || li.textContent || '').toLowerCase();
+      li.classList.toggle('hidden', !hay.includes(query));
     });
   }
   paletteInput && paletteInput.addEventListener('input', e => filterPalette(e.target.value));
-  paletteItems.forEach(li => {
-    li.addEventListener('click', () => {
-      const href = li.dataset.href;
-      closePalette();
-      const target = $(href);
-      if(target){ if(lenis) lenis.scrollTo(target); else target.scrollIntoView({behavior:'smooth'}); }
-    });
-  });
   $('#palette-trigger') && $('#palette-trigger').addEventListener('click', openPalette);
-  $('#dock-search') && $('#dock-search').addEventListener('click', openPalette);
   paletteOverlay && paletteOverlay.addEventListener('click', e => { if(e.target === paletteOverlay) closePalette(); });
 
   /* ============ MODALS ============ */
