@@ -1,7 +1,7 @@
 /* ============================================================
    Openhouse — Category Directory + Owner upload
-   - Category pills; each opens a popup with paginated +
-     sortable (Newest / Oldest) app listings.
+   - Category pills; each opens a popup with paginated
+     app listings (newest first).
    - Owner login (client-side gate) reveals an Upload flow.
    - Upload auto-extracts description from a GitHub repo.
    ============================================================ */
@@ -118,7 +118,7 @@
 
   /* ---------------- STATE ---------------- */
   const PAGE_SIZE = 3; // 3 apps per page; new apps flow onto the next page
-  const cur = { cat:null, sort:'newest', page:1 };
+  const cur = { cat:null, page:1 };
 
   /* ---------------- DIRECTORY ELEMENTS ---------------- */
   const grid     = $('#cat-grid');
@@ -126,7 +126,6 @@
   const titleEl  = $('#cat-title');
   const metaEl   = $('#cat-meta');
   const pagesEl  = $('#cat-pages');
-  const sortEl   = $('#cat-sort');
   const listEl   = $('#cat-list');
   const closeBtn = $('#cat-close');
 
@@ -265,7 +264,6 @@
   function openCat(cat){
     closeMenu();
     cur.cat = cat;
-    cur.sort = 'newest';
     cur.page = 1;
     titleEl.textContent = cat;
     render();
@@ -278,15 +276,10 @@
 
   /* ---------------- RENDER MODAL ---------------- */
   function sortedApps(){
+    // Fixed order: newest first (timestamp, then id as tiebreaker).
     const arr = (BY_CAT[cur.cat] || []).slice();
-    // Compare full timestamps; fall back to id so same-day uploads still
-    // sort by true insertion order.
     const key = a => (a.added || '') + '|' + String(a.id != null ? a.id : 0).padStart(12, '0');
-    arr.sort((a, b) => {
-      const ka = key(a), kb = key(b);
-      const cmp = ka < kb ? -1 : ka > kb ? 1 : 0;
-      return cur.sort === 'newest' ? -cmp : cmp;
-    });
+    arr.sort((a, b) => key(a) < key(b) ? 1 : key(a) > key(b) ? -1 : 0);
     return arr;
   }
 
@@ -305,8 +298,6 @@
     pg += `<button class="pg next" data-pg="next" ${cur.page === total ? 'disabled' : ''} aria-label="Next page">›</button>`;
     pagesEl.innerHTML = pg;
 
-    // Sort pill active state
-    $$('.sort-opt', sortEl).forEach(b => b.classList.toggle('active', b.dataset.sort === cur.sort));
 
     // List
     const start = (cur.page - 1) * PAGE_SIZE;
@@ -462,14 +453,6 @@
     if(v === 'prev')      cur.page = Math.max(1, cur.page - 1);
     else if(v === 'next') cur.page = Math.min(total, cur.page + 1);
     else                  cur.page = parseInt(v, 10);
-    render();
-  });
-
-  sortEl.addEventListener('click', e => {
-    const btn = e.target.closest('.sort-opt');
-    if(!btn) return;
-    cur.sort = btn.dataset.sort;
-    cur.page = 1;
     render();
   });
 

@@ -195,6 +195,26 @@
     });
   });
 
+  /* ============ DOCK: ACTIVE SECTION (filled icon) ============ */
+  const dockLinks = $$('.dock a[href^="#"]');
+  if(dockLinks.length && 'IntersectionObserver' in window){
+    const hrefFor = new Map(); // section element -> dock href
+    dockLinks.forEach(a => {
+      const href = a.getAttribute('href');
+      // '#top' is the whole <main>; represent it by the hero section instead
+      const target = href === '#top' ? $('.hero') : $(href);
+      if(target) hrefFor.set(target, href);
+    });
+    const dockIo = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(!entry.isIntersecting) return;
+        const href = hrefFor.get(entry.target);
+        dockLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === href));
+      });
+    }, { rootMargin: '-40% 0px -50% 0px' });
+    hrefFor.forEach((href, sec) => dockIo.observe(sec));
+  }
+
   /* ============ REVEAL ON SCROLL ============ */
   function initReveals(){
     const els = $$('.reveal-up');
@@ -276,7 +296,7 @@
           const eased = 1 - Math.pow(1-p, 3);
           el.textContent = Math.floor(eased * target) + suffix;
           if(p < 1) requestAnimationFrame(tick);
-          else el.textContent = target + suffix;
+          else { el.textContent = target + suffix; el.classList.add('done'); }
         }
         requestAnimationFrame(tick);
         statIo.unobserve(el);
@@ -355,7 +375,9 @@
     paletteOverlay.classList.add('open');
     paletteInput.value = '';
     filterPalette('');
-    setTimeout(() => paletteInput.focus(), 60);
+    // Only auto-focus (and pop the keyboard) on devices with a physical
+    // keyboard — on phones the on-screen keyboard covering the list is worse.
+    if(!isTouch) setTimeout(() => paletteInput.focus(), 60);
   }
   function closePalette(){ paletteOverlay.classList.remove('open'); }
   function filterPalette(q){
