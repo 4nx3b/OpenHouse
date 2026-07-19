@@ -851,29 +851,26 @@ a{ transition:color .25s ease; }
   display:flex; align-items:center; justify-content:center;
 }
 .story-img{
-  position:absolute;
-  width:min(680px, 88vw);
-  aspect-ratio:16/9;
+  position:absolute; inset:0;
+  width:100%; height:100%;
   object-fit:cover;
   border:none; border-radius:0;
   opacity:0;
-  transform:scale(1.06);
+  transform:scale(1.04);
   transition:opacity 1s var(--ease), transform 1.4s var(--ease);
-  border-radius:28px;
-  /* rectangular fade: horizontal + vertical gradients intersected, so the
-     shape stays a rounded rectangle with soft edges (not an oval) */
+  /* full-screen art with just a light fade at the edges/corners */
   -webkit-mask-image:
-    linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 7%, black 93%, transparent 100%);
   -webkit-mask-composite:source-in;
   mask-image:
-    linear-gradient(to right, transparent 0%, black 18%, black 82%, transparent 100%),
-    linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%);
+    linear-gradient(to right, transparent 0%, black 7%, black 93%, transparent 100%),
+    linear-gradient(to bottom, transparent 0%, black 7%, black 93%, transparent 100%);
   mask-composite:intersect;
-  filter:saturate(.85) contrast(1.02) brightness(.8);
+  filter:saturate(.85) contrast(1.02) brightness(.75);
 }
 .story-img.on{
-  opacity:.5;
+  opacity:.45;
   transform:scale(1);
 }
 /* text sits above the art */
@@ -882,8 +879,7 @@ a{ transition:color .25s ease; }
 .story-line[data-active="true"]{ text-shadow:0 2px 24px rgba(0,0,0,.85); }
 
 @media (max-width:640px){
-  .story-img{ width:96vw; }
-  .story-img.on{ opacity:.42; }
+  .story-img.on{ opacity:.4; }
 }
 @media (prefers-reduced-motion: reduce){
   .story-img{ transition:none; transform:none; }
