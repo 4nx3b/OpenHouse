@@ -206,6 +206,35 @@ Open the site **in the browser where you added them**, sign in as owner —
 you'll be asked whether to publish the locally-saved apps to the database.
 Confirm, and they appear for everyone.
 
+### Hardening the owner password (recommended)
+
+Two upgrades on top of the base setup — run both in the SQL Editor:
+
+```sql
+-- 1. store a salted hash instead of the plaintext password
+create extension if not exists pgcrypto;
+update private.secrets
+  set value = crypt(value, gen_salt('bf'))
+  where key = 'owner_pass' and value not like '$2%';
+
+create or replace function public.owner_check(p_pass text)
+returns boolean language sql security definer set search_path = ''
+as $$
+  select exists(
+    select 1 from private.secrets
+    where key = 'owner_pass' and value = extensions.crypt(p_pass, value)
+  );
+$$;
+
+-- 2. change the password later (replace NEWPASSWORD):
+-- update private.secrets set value = extensions.crypt('NEWPASSWORD', extensions.gen_salt('bf')) where key = 'owner_pass';
+```
+
+After this the database only stores a bcrypt hash — even someone reading
+the table can't recover your password. The site needs no changes; sign-in
+works exactly the same. The login form also adds a growing cooldown after
+3 failed attempts to slow brute-forcing.
+
 **Security note:** the anon key is safe to expose (it only allows reading);
 every write re-checks the owner password server-side. Don't ever put the
 `service_role` key in the site.
