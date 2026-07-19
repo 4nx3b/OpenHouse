@@ -274,7 +274,7 @@
     render();
     overlay.classList.add('open');
   }
-  function closeCat(){ overlay.classList.remove('open'); }
+  function closeCat(){ overlay.classList.remove('open'); if(typeof closeCardMenu === 'function') closeCardMenu(); }
 
   closeBtn.addEventListener('click', closeCat);
   overlay.addEventListener('click', e => { if(e.target === overlay) closeCat(); });
@@ -319,15 +319,7 @@
       : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
-    const menuBtn = isAdmin ? `
-      <div class="cat-menu-wrap">
-        <button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>
-        <div class="cat-menu" role="menu">
-          <button class="cat-menu-item" data-act="edit" role="menuitem" data-cursor="pointer">Edit app</button>
-          <button class="cat-menu-item" data-act="star" role="menuitem" data-cursor="pointer">${a.starred ? 'Unstar' : 'Star app'}</button>
-          <button class="cat-menu-item" data-act="tags" role="menuitem" data-cursor="pointer">Edit tags</button>
-        </div>
-      </div>` : '';
+    const menuBtn = isAdmin ? `<button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>` : '';
     const starBadge = a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
@@ -380,44 +372,70 @@
           deleteApp(card.dataset.cat, name);
         }
       });
-      const menuWrap = card.querySelector('.cat-menu-wrap');
-      if(menuWrap){
-        const menu = menuWrap.querySelector('.cat-menu');
-        menuWrap.querySelector('.cat-menu-btn').addEventListener('click', e => {
-          e.stopPropagation();
-          // close any other open card menu first
-          $$('.cat-menu.open', listEl).forEach(m => { if(m !== menu) m.classList.remove('open'); });
-          if(!menu.classList.contains('open')){
-            // open upward if there's not enough room below (menu ≈ 140px)
-            const btnRect = menuWrap.getBoundingClientRect();
-            const listRect = listEl.getBoundingClientRect();
-            const spaceBelow = Math.min(listRect.bottom, window.innerHeight) - btnRect.bottom;
-            menu.classList.toggle('up', spaceBelow < 150);
-          }
-          menu.classList.toggle('open');
-        });
-        menu.querySelectorAll('.cat-menu-item').forEach(item => {
-          item.addEventListener('click', e => {
-            e.stopPropagation();
-            menu.classList.remove('open');
-            const act = item.dataset.act;
-            const cat = card.dataset.cat, name = card.dataset.name;
-            if(act === 'tags') openTagEditor(cat, name);
-            else if(act === 'star') toggleStar(cat, name);
-            else if(act === 'edit'){
-              const app = UPLOADS.find(a => a.cat === cat && a.name === name);
-              if(app) openUpload(app);
-            }
-          });
-        });
-      }
+      const menuBtn = card.querySelector('.cat-menu-btn');
+      if(menuBtn) menuBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        const cat = card.dataset.cat, name = card.dataset.name;
+        const app = (BY_CAT[cat] || []).find(a => a.name === name);
+        toggleCardMenu(menuBtn, cat, name, !!(app && app.starred));
+      });
     });
   }
 
-  // close any open card menu on outside taps
-  document.addEventListener('click', () => {
-    $$('.cat-menu.open').forEach(m => m.classList.remove('open'));
+  /* ---------------- GLOBAL CARD MENU ----------------
+     One dropdown lives at the top level of the page (never inside a
+     scroll container or filtered modal), so backdrop blur works and it
+     can never be clipped. Positioned next to whichever ⋮ was tapped. */
+  const cardMenu = document.createElement('div');
+  cardMenu.className = 'cat-menu';
+  cardMenu.setAttribute('role', 'menu');
+  cardMenu.innerHTML = `
+    <button class="cat-menu-item" data-act="edit" role="menuitem" data-cursor="pointer">Edit app</button>
+    <button class="cat-menu-item" data-act="star" role="menuitem" data-cursor="pointer">Star app</button>
+    <button class="cat-menu-item" data-act="tags" role="menuitem" data-cursor="pointer">Edit tags</button>`;
+  document.body.appendChild(cardMenu);
+  let cardMenuCtx = null; // { cat, name }
+
+  function toggleCardMenu(btn, cat, name, starred){
+    if(cardMenu.classList.contains('open') && cardMenuCtx && cardMenuCtx.name === name && cardMenuCtx.cat === cat){
+      closeCardMenu();
+      return;
+    }
+    cardMenuCtx = { cat, name };
+    cardMenu.querySelector('[data-act="star"]').textContent = starred ? 'Unstar' : 'Star app';
+    // position: below the button, right-aligned; flip up if no room
+    const r = btn.getBoundingClientRect();
+    const menuW = 150, menuH = 130, gap = 6, pad = 8;
+    let left = Math.min(r.right - menuW + 8, window.innerWidth - menuW - pad);
+    left = Math.max(pad, left);
+    let top = r.bottom + gap;
+    const flipUp = top + menuH > window.innerHeight - pad;
+    if(flipUp) top = r.top - gap - menuH;
+    cardMenu.style.left = left + 'px';
+    cardMenu.style.top = Math.max(pad, top) + 'px';
+    cardMenu.classList.toggle('up', flipUp);
+    cardMenu.classList.add('open');
+  }
+  function closeCardMenu(){ cardMenu.classList.remove('open'); cardMenuCtx = null; }
+
+  cardMenu.addEventListener('click', e => e.stopPropagation());
+  cardMenu.querySelectorAll('.cat-menu-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const ctx = cardMenuCtx;
+      closeCardMenu();
+      if(!ctx) return;
+      const act = item.dataset.act;
+      if(act === 'tags') openTagEditor(ctx.cat, ctx.name);
+      else if(act === 'star') toggleStar(ctx.cat, ctx.name);
+      else if(act === 'edit'){
+        const app = UPLOADS.find(a => a.cat === ctx.cat && a.name === ctx.name);
+        if(app) openUpload(app);
+      }
+    });
   });
+  // close on outside tap, scroll inside the list, or popup close
+  document.addEventListener('click', closeCardMenu);
+  if(listEl) listEl.addEventListener('scroll', closeCardMenu, { passive:true });
 
   /* ---------------- STAR / FEATURE (owner only) ---------------- */
   async function toggleStar(cat, name){
