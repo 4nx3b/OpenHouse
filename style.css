@@ -736,6 +736,9 @@ body.loaded .dock{ opacity:1; transform:translate(-50%, 0); transition:opacity .
 a:focus-visible, button:focus-visible{
   outline:2px solid var(--accent); outline-offset:3px;
 }
+/* clickable cards handle their own hover/press feedback — no outline ring */
+.cat-app, .cat-app:focus, .cat-app:focus-visible,
+.cat-pill:focus, .cat-pill:focus-visible{ outline:none; }
 /* touch devices: taps shouldn't leave a lingering focus ring */
 @media (hover:none){
   a:focus-visible, button:focus-visible, a:focus, button:focus{ outline:none; }
@@ -918,3 +921,75 @@ a{ transition:color .25s ease; }
 .marquee-track{ will-change:transform; }
 /* cheaper text rendering for long mono blocks */
 .typewrite,.story-line{ text-rendering:optimizeSpeed; }
+
+/* ================= INFO POPUPS (guidelines + changelog) ================= */
+.info-modal{ width:min(520px,100%); max-height:82vh; display:flex; flex-direction:column; }
+.info-scroll{
+  overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+  scrollbar-width:thin; scrollbar-color:rgba(255,255,255,.15) transparent;
+  margin-top:4px; padding-right:6px; min-height:0;
+}
+.info-scroll::-webkit-scrollbar{ width:4px; }
+.info-scroll::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.15); border-radius:4px; }
+.info-list{ display:flex; flex-direction:column; gap:12px; }
+.info-list li{
+  position:relative; padding-left:22px;
+  font-size:13.5px; color:var(--text-dim); line-height:1.6;
+}
+.info-list li::before{
+  content:'✦'; position:absolute; left:0; top:1px;
+  color:var(--accent); font-size:11px;
+}
+.info-list li strong{ color:var(--text); font-weight:600; }
+.info-list li em{ color:var(--accent); font-style:normal; }
+.info-note{
+  margin-top:18px; padding:12px 14px; border-radius:12px;
+  background:var(--accent-soft); border:1px solid rgba(255,180,84,.25);
+  font-size:13px; color:var(--text-dim); line-height:1.55;
+}
+.info-note em{ color:var(--accent); font-style:normal; font-weight:600; }
+.log-entry{ margin-bottom:22px; }
+.log-entry:last-child{ margin-bottom:4px; }
+.log-date{
+  display:inline-block; font-family:var(--font-mono); font-size:10.5px;
+  text-transform:uppercase; letter-spacing:.08em; color:var(--accent);
+  background:var(--accent-soft); padding:3px 10px; border-radius:100px; margin-bottom:12px;
+}
+/* rows cascade in when either popup opens */
+.modal-overlay.open .info-list li{ animation:rowIn .45s var(--ease) both; }
+.modal-overlay.open .info-list li:nth-child(1){ animation-delay:.04s; }
+.modal-overlay.open .info-list li:nth-child(2){ animation-delay:.08s; }
+.modal-overlay.open .info-list li:nth-child(3){ animation-delay:.12s; }
+.modal-overlay.open .info-list li:nth-child(4){ animation-delay:.16s; }
+.modal-overlay.open .info-list li:nth-child(5){ animation-delay:.20s; }
+.modal-overlay.open .info-list li:nth-child(n+6){ animation-delay:.24s; }
+
+/* ================= POLISH ROUND 5 ================= */
+/* footer links slide right on hover */
+.footer-col a{ transition:color .25s ease, transform .25s var(--ease); }
+.footer-col a:hover{ transform:translateX(4px); }
+
+/* footer brand mark pulses gently */
+.footer-brand .brand svg{ animation:footerPulse 4s ease-in-out infinite; }
+@keyframes footerPulse{ 0%,100%{ opacity:1; } 50%{ opacity:.55; } }
+
+/* category pill count ticks up visually on grid re-render */
+@keyframes countIn{ from{ opacity:0; transform:translateY(4px); } to{ opacity:1; transform:none; } }
+.cat-pill .cat-count{ animation:countIn .4s var(--ease) both; }
+
+/* download card border breathes while in view */
+.download-card{ transition:border-color .4s ease, box-shadow .4s ease; }
+.download-card:hover{ border-color:rgba(255,180,84,.45); box-shadow:0 30px 80px -30px rgba(255,180,84,.15); }
+
+/* fine-print guideline link glows on hover */
+.fine-print a{ transition:color .25s ease, text-shadow .25s ease; }
+.fine-print a:hover{ color:var(--accent); text-shadow:0 0 12px var(--accent-glow); }
+
+/* modal eyebrow chip slides in with the modal */
+.modal-overlay.open .modal-eyebrow{ animation:rowIn .4s var(--ease) .05s both; }
+
+/* app icon in cards gets a soft glow while its card is hovered */
+.cat-app:hover .app-icon{ box-shadow:0 0 18px rgba(255,180,84,.25); }
+
+/* toast text slides in slightly after the container */
+.toast > span:last-child{ animation:rowIn .35s var(--ease) .08s both; }
