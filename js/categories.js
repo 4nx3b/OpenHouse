@@ -142,9 +142,11 @@
         ? `<span class="cat-act cat-act-icon" role="button" tabindex="0" data-act="icon" title="Change icon" aria-label="Change icon for ${esc(cat)}">✎</span>
            <span class="cat-act cat-act-del" role="button" tabindex="0" data-act="del" title="Delete category" aria-label="Delete ${esc(cat)} category">✕</span>`
         : '';
-      return `<button class="cat-pill" data-cat="${esc(cat)}" data-cursor="pointer" aria-label="Open ${esc(cat)} category" style="--i:${idx}">
+      const featured = cat === 'Featured';
+      const sub = featured ? `<span class="cat-sub">The best of the best handpicked apps will be shown here.</span>` : '';
+      return `<button class="cat-pill${featured ? ' cat-pill-featured' : ''}" data-cat="${esc(cat)}" data-cursor="pointer" aria-label="Open ${esc(cat)} category" style="--i:${idx}">
         <span class="cat-ico">${esc(glyphFor(cat))}</span>
-        <span class="cat-name">${esc(cat)}</span>
+        <span class="cat-pill-body"><span class="cat-name">${esc(cat)}</span>${sub}</span>
         <span class="cat-count">${n}</span>
         ${acts}
       </button>`;
@@ -320,7 +322,7 @@
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
     const menuBtn = isAdmin ? `<button class="cat-menu-btn" data-cursor="pointer" aria-label="App actions" aria-haspopup="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="19" r="1.6"/></svg></button>` : '';
-    const starBadge = a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '';
+    const starBadge = (a.starred && cur.cat !== 'Featured') ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
       ${delBtn}${menuBtn}${starBadge}
@@ -603,9 +605,17 @@
 
   $('#login-close').addEventListener('click', closeLogin);
   $('#login-overlay').addEventListener('click', e => { if(e.target === $('#login-overlay')) closeLogin(); });
+  let loginFails = 0, loginLockedUntil = 0;
   $('#login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const pass = $('#login-pass').value;
+
+    // simple brute-force throttle: growing cooldown after failures
+    if(Date.now() < loginLockedUntil){
+      const secs = Math.ceil((loginLockedUntil - Date.now()) / 1000);
+      $('#login-error').textContent = 'Too many attempts — wait ' + secs + 's.';
+      return;
+    }
 
     if(DB.ready){
       // Server-side check — the password is verified by the database,
@@ -613,12 +623,20 @@
       $('#login-error').textContent = 'Checking…';
       try {
         const ok = await DB.checkPass(pass);
-        if(!ok){ $('#login-error').textContent = 'Incorrect password.'; return; }
+        if(!ok){
+          loginFails++;
+          if(loginFails >= 3) loginLockedUntil = Date.now() + Math.min(60, 5 * Math.pow(2, loginFails - 3)) * 1000;
+          $('#login-error').textContent = 'Incorrect password.';
+          return;
+        }
+        loginFails = 0;
       } catch(err){
         $('#login-error').textContent = err.message || 'Could not reach the database.';
         return;
       }
     } else if(hashStr(pass) !== ADMIN_HASH){
+      loginFails++;
+      if(loginFails >= 3) loginLockedUntil = Date.now() + Math.min(60, 5 * Math.pow(2, loginFails - 3)) * 1000;
       $('#login-error').textContent = 'Incorrect password.';
       return;
     }
@@ -828,6 +846,21 @@
     if(cat === '__new__') cat = $('#up-newcat').value.trim();
     if(!name){ errEl.textContent = 'App name is required.'; return; }
     if(!cat){ errEl.textContent = 'Choose or create a category.'; return; }
+
+    // Duplicate check (skipped for the app being edited): same name
+    // anywhere, or same repo anywhere.
+    const repoNorm = normalizeRepo($('#up-repo').value.trim()).toLowerCase().replace(/\/+$/, '');
+    const dupe = UPLOADS.find(a => {
+      if(editingApp && a === editingApp) return false;
+      if(a.name.trim().toLowerCase() === name.toLowerCase()) return true;
+      if(repoNorm && a.repo && normalizeRepo(a.repo).toLowerCase().replace(/\/+$/, '') === repoNorm) return true;
+      return false;
+    });
+    if(dupe){
+      errEl.textContent = '“' + dupe.name + '” is already listed' +
+        (dupe.cat ? ' in ' + dupe.cat : '') + ' — no duplicates allowed.';
+      return;
+    }
 
     // Optional emoji chosen while creating a new category
     const newIconRaw = $('#up-newcat-icon') ? $('#up-newcat-icon').value : '';
