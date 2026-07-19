@@ -288,6 +288,19 @@
     })();
   }
 
+  /* ============ FOOTER REVEAL ============ */
+  const footerEl = $('.footer');
+  if(footerEl && 'IntersectionObserver' in window){
+    const fio = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){ footerEl.classList.add('in-view'); fio.disconnect(); }
+      });
+    }, { threshold: 0.15 });
+    fio.observe(footerEl);
+  } else if(footerEl){
+    footerEl.classList.add('in-view');
+  }
+
   /* ============ STATS COUNT-UP ============ */
   const statEls = $$('.stat-num');
   if(statEls.length && 'IntersectionObserver' in window){
