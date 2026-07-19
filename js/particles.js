@@ -126,8 +126,8 @@
         ctx.globalAlpha = 1;
       }
     }
-
-    requestAnimationFrame(step);
+    // NOTE: scheduling happens only in step() — draw() must never schedule,
+    // or rAF callbacks double every frame (exponential loop = massive lag).
   }
 
   function step(){
