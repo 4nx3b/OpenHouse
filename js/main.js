@@ -446,6 +446,20 @@
   $('#changelog-close') && $('#changelog-close').addEventListener('click', () => closeModal(changelogOverlay));
   changelogOverlay && changelogOverlay.addEventListener('click', e => { if(e.target === changelogOverlay) closeModal(changelogOverlay); });
 
+  // Website / Apps tabs inside the changelog
+  $$('.log-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      $$('.log-tab').forEach(t => {
+        const on = t === tab;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      const site = $('#log-pane-site'), apps = $('#log-pane-apps');
+      if(site) site.hidden = tab.dataset.pane !== 'site';
+      if(apps) apps.hidden = tab.dataset.pane !== 'apps';
+    });
+  });
+
   /* ============ KEYBOARD SHORTCUTS ============ */
   document.addEventListener('keydown', e => {
     const tag = (e.target.tagName || '').toLowerCase();

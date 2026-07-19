@@ -986,7 +986,43 @@
   }
 
   /* ---------------- PALETTE APPS + DELETE ---------------- */
+  /* ---------------- CHANGELOG: APPS PANE ----------------
+     Newest first, grouped by month, using each app's added date. */
+  function buildAppLog(){
+    const pane = $('#log-pane-apps');
+    if(!pane) return;
+    const apps = UPLOADS.slice().sort((a, b) => {
+      const ka = (a.added || '') + '|' + String(a.id != null ? a.id : 0).padStart(12, '0');
+      const kb = (b.added || '') + '|' + String(b.id != null ? b.id : 0).padStart(12, '0');
+      return ka < kb ? 1 : ka > kb ? -1 : 0;
+    });
+    if(!apps.length){
+      pane.innerHTML = '<p class="log-empty">No apps published yet.</p>';
+      return;
+    }
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const groups = [];
+    apps.forEach(a => {
+      const d = new Date(a.added || Date.now());
+      const label = isNaN(d) ? 'Earlier' : MONTHS[d.getMonth()] + ' ' + d.getFullYear();
+      let g = groups[groups.length - 1];
+      if(!g || g.label !== label){ g = { label, items: [] }; groups.push(g); }
+      const day = isNaN(d) ? '' : String(d.getDate()).padStart(2, '0') + ' ' + MONTHS[d.getMonth()].slice(0, 3);
+      g.items.push({ app: a, day });
+    });
+    pane.innerHTML = groups.map(g => `
+      <div class="log-entry">
+        <span class="log-date">${esc(g.label)}</span>
+        <ul class="info-list log-apps">
+          ${g.items.map(({ app, day }) => `
+            <li><strong>${esc(app.name)}</strong> added to <em>${esc(app.cat)}</em>${day ? ` <span class="log-day">· ${esc(day)}</span>` : ''}</li>`).join('')}
+        </ul>
+      </div>`).join('');
+  }
+
   function buildPaletteApps(){
+    buildAppLog(); // keep the changelog's Apps pane in sync with the data
     // Search results: categories + apps only.
     const results = $('#palette-results');
     if(!results) return;
