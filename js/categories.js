@@ -62,6 +62,10 @@
       BY_CAT[a.cat] = BY_CAT[a.cat] || [];
       if(!ORDER.includes(a.cat)) ORDER.push(a.cat);
       BY_CAT[a.cat].push(a);
+      // starred apps also show up in Featured (unless that's their home)
+      if(a.starred && a.cat !== 'Featured' && BY_CAT['Featured']){
+        BY_CAT['Featured'].push(a);
+      }
     });
   }
 
@@ -100,7 +104,8 @@
       UPLOADS = apps.map(r => ({
         id: r.id, name: r.name, cat: r.cat, icon: r.icon,
         desc: r.description, tags: Array.isArray(r.tags) ? r.tags : [r.cat], license: r.license,
-        added: r.created_at || '', repo: r.repo, thumb: r.thumb || ''
+        added: r.created_at || '', repo: r.repo, thumb: r.thumb || '',
+        starred: !!r.starred
       }));
       (meta || []).forEach(m => {
         if(m.key === 'hidden_cats' && Array.isArray(m.value)) HIDDEN_CATS = m.value;
@@ -314,10 +319,13 @@
       : `<span class="app-icon">${esc(a.icon || glyphFor(a.cat))}</span>`;
     const tags = (a.tags || []).concat([a.license]).map(t => `<span>${esc(t)}</span>`).join('');
     const delBtn = isAdmin ? `<button class="cat-del" data-cursor="pointer" aria-label="Delete app" title="Delete app"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : '';
+    const starBtn = isAdmin
+      ? `<button class="cat-star ${a.starred ? 'is-on' : ''}" data-cursor="pointer" aria-label="${a.starred ? 'Unstar app' : 'Star app'}" title="${a.starred ? 'Unstar (remove from Featured)' : 'Star (adds to Featured)'}"><svg width="13" height="13" viewBox="0 0 24 24" fill="${a.starred ? 'currentColor' : 'none'}"><path d="M12 2.5l2.9 6.2 6.6.8-4.9 4.6 1.3 6.6-5.9-3.3-5.9 3.3 1.3-6.6L2.5 9.5l6.6-.8L12 2.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></button>`
+      : (a.starred ? `<span class="cat-star-badge" title="Featured" aria-label="Featured">★</span>` : '');
     const tagBtn = isAdmin ? `<button class="cat-tags-edit" data-cursor="pointer" aria-label="Edit tags" title="Edit tags"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M20.59 13.41L13.42 20.58a2 2 0 0 1-2.83 0L3 13V3h10l7.59 7.59a2 2 0 0 1 0 2.82z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="7.5" cy="7.5" r="1.3" fill="currentColor"/></svg></button>` : '';
     return `<article class="cat-app tilt-card" data-cursor="pointer" data-repo="${esc(a.repo || '')}" data-name="${esc(a.name)}" data-cat="${esc(a.cat)}" style="animation-delay:${(i*0.05).toFixed(2)}s">
       <div class="card-glow"></div>
-      ${delBtn}${tagBtn}
+      ${delBtn}${tagBtn}${starBtn}
       ${media}
       <div class="cat-app-body">
         <h4>${esc(a.name)}</h4>
@@ -363,7 +371,32 @@
         e.stopPropagation();
         openTagEditor(card.dataset.cat, card.dataset.name);
       });
+      const starBtn = card.querySelector('.cat-star');
+      if(starBtn) starBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleStar(card.dataset.cat, card.dataset.name);
+      });
     });
+  }
+
+  /* ---------------- STAR / FEATURE (owner only) ---------------- */
+  async function toggleStar(cat, name){
+    if(!isAdmin) return;
+    const app = UPLOADS.find(a => a.cat === cat && a.name === name);
+    if(!app) return;
+    const next = !app.starred;
+    if(DB.ready && app.id != null){
+      try { await DB.setStar(ownerPass, app.id, next); }
+      catch(e){ toast(e.message || 'Could not update star.'); return; }
+    }
+    app.starred = next;
+    saveUploads();
+    rebuildData();
+    renderGrid();
+    buildPaletteApps();
+    updateStats();
+    render();
+    toast(next ? '"' + app.name + '" starred — now in Featured.' : '"' + app.name + '" removed from Featured.');
   }
 
   /* ---------------- TAG EDITOR (owner only) ---------------- */
@@ -663,7 +696,8 @@
       license: $('#up-license').value.trim() || 'MIT',
       added: new Date().toISOString().slice(0, 10),
       repo: $('#up-repo').value.trim(),
-      thumb: pickedThumb || repoThumb || ''
+      thumb: pickedThumb || repoThumb || '',
+      starred: false
     };
 
     if(DB.ready){
