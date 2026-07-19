@@ -297,9 +297,14 @@
 
     metaEl.textContent = apps.length + (apps.length === 1 ? ' app' : ' apps');
 
-    // Pages pill
+    // Pages pill — sliding window of at most 3 page numbers around the
+    // current page; older numbers drop off as the user advances.
+    const WINDOW = 3;
+    let winStart = Math.max(1, cur.page - 1);
+    let winEnd = Math.min(total, winStart + WINDOW - 1);
+    winStart = Math.max(1, winEnd - WINDOW + 1); // re-anchor near the end
     let pg = `<button class="pg prev" data-pg="prev" ${cur.page === 1 ? 'disabled' : ''} aria-label="Previous page">‹</button>`;
-    for(let p = 1; p <= total; p++){
+    for(let p = winStart; p <= winEnd; p++){
       pg += `<button class="pg ${p === cur.page ? 'active' : ''}" data-pg="${p}" aria-label="Page ${p}">${p}</button>`;
     }
     pg += `<button class="pg next" data-pg="next" ${cur.page === total ? 'disabled' : ''} aria-label="Next page">›</button>`;
@@ -670,7 +675,9 @@
 
   function populateCategorySelect(){
     const sel = $('#up-category');
-    sel.innerHTML = ORDER.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
+    // Featured is curated through the star system — not a direct upload target.
+    sel.innerHTML = ORDER.filter(c => c !== 'Featured')
+      .map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
       + `<option value="__new__">＋ Create new category</option>`;
     syncSelectButton();
   }
@@ -780,6 +787,12 @@
       $('#up-desc').value = editingApp.desc;
       $('#up-repo').value = editingApp.repo || '';
       $('#up-license').value = editingApp.license || '';
+      // legacy apps uploaded straight into Featured keep their option
+      if(editingApp.cat === 'Featured'){
+        const opt = document.createElement('option');
+        opt.value = 'Featured'; opt.textContent = 'Featured';
+        $('#up-category').insertBefore(opt, $('#up-category').firstChild);
+      }
       if(ORDER.includes(editingApp.cat)){ $('#up-category').value = editingApp.cat; syncSelectButton(); }
       if(editingApp.thumb){ repoThumb = editingApp.thumb; showThumb(editingApp.thumb); }
     }
