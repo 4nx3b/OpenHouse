@@ -1481,8 +1481,10 @@
     events.sort((a, b) => (a.t || '') < (b.t || '') ? 1 : -1);
 
     if(!events.length){
+      // The Website pane is static content from index.html. Do not replace it
+      // with the Apps empty state: a missing/empty activity feed should only
+      // affect the live Apps pane.
       if (appsPane) appsPane.innerHTML = '<p class="log-empty">No activity yet.</p>';
-      if (sitePane) sitePane.innerHTML = '<p class="log-empty">No activity yet.</p>'; 
       return;
     }
 
