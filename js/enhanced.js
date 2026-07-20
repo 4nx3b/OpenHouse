@@ -310,115 +310,103 @@
   }
 
   // ===== 15. TAP SOUNDS & CROSSHAIR FOR TOUCH DEVICES =====
-  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
   let tapAudioContext = null;
   let audioUnlocked = false;
   let lastTapTime = 0;
-  const TAP_DEBOUNCE = 150;
+  const TAP_DEBOUNCE = 100;
 
-  // Create crosshair element
-  if (isTouchDevice) {
-    const crosshair = document.createElement('div');
-    crosshair.id = 'touch-crosshair';
-    document.body.appendChild(crosshair);
+  // Create crosshair element for all devices
+  const crosshair = document.createElement('div');
+  crosshair.id = 'touch-crosshair';
+  document.body.appendChild(crosshair);
 
-    function showCrosshair(x, y) {
-      const crosshair = $('#touch-crosshair');
-      if (!crosshair) return;
-      crosshair.style.left = x + 'px';
-      crosshair.style.top = y + 'px';
-      crosshair.classList.add('active');
-      setTimeout(() => {
-        crosshair.classList.remove('active');
-      }, 150);
-    }
-
-    function unlockAudio() {
-      if (audioUnlocked) return;
-      try {
-        if (!tapAudioContext) {
-          tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        // Create a silent buffer to unlock audio
-        const buffer = tapAudioContext.createBuffer(1, 1, 22050);
-        const source = tapAudioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(tapAudioContext.destination);
-        source.start(0);
-        audioUnlocked = true;
-      } catch (e) {
-        console.log('Audio unlock failed:', e);
-      }
-    }
-
-    function playTapSound() {
-      const now = Date.now();
-      if (now - lastTapTime < TAP_DEBOUNCE) return;
-      lastTapTime = now;
-
-      if (!audioUnlocked) {
-        unlockAudio();
-        // Try again after unlock
-        setTimeout(playTapSound, 50);
-        return;
-      }
-
-      try {
-        if (!tapAudioContext) return;
-
-        const oscillator = tapAudioContext.createOscillator();
-        const gainNode = tapAudioContext.createGain();
-
-        // Higher pitch for better audibility, with a quick drop
-        oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(1200, tapAudioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(800, tapAudioContext.currentTime + 0.04);
-        
-        oscillator.connect(gainNode);
-        gainNode.connect(tapAudioContext.destination);
-
-        // Louder and punchier
-        gainNode.gain.setValueAtTime(0.2, tapAudioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, tapAudioContext.currentTime + 0.04);
-
-        oscillator.start();
-        oscillator.stop(tapAudioContext.currentTime + 0.04);
-      } catch (e) {
-        console.log('Tap sound error:', e);
-      }
-    }
-
-    function handleTap(e) {
-      const now = Date.now();
-      if (now - lastTapTime < TAP_DEBOUNCE) return;
-      lastTapTime = now;
-
-      const x = e.touches ? e.touches[0].clientX : e.clientX;
-      const y = e.touches ? e.touches[0].clientY : e.clientY;
-
-      // Only play sound and show crosshair for interactive elements
-      const target = e.target.closest('button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close, .changelog-tab, .palette-trigger');
-      if (target) {
-        playTapSound();
-        showCrosshair(x, y);
-      }
-    }
-
-    // Initialize audio on first touch
-    document.addEventListener('touchstart', () => {
-      unlockAudio();
-    }, { once: true, passive: true });
-
-    // Touch events
-    document.addEventListener('touchstart', handleTap, { passive: true });
-    
-    // Also handle click for testing on desktop
-    document.addEventListener('mousedown', (e) => {
-      if (isTouchDevice) {
-        handleTap(e);
-      }
-    });
+  function showCrosshair(x, y) {
+    const c = $('#touch-crosshair');
+    if (!c) return;
+    c.style.left = x + 'px';
+    c.style.top = y + 'px';
+    c.classList.add('active');
+    setTimeout(() => {
+      c.classList.remove('active');
+    }, 150);
   }
+
+  function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    try {
+      tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Create and play silent buffer to unlock
+      const buffer = tapAudioContext.createBuffer(1, 1, 22050);
+      const source = tapAudioContext.createBufferSource();
+      source.buffer = buffer;
+      source.connect(tapAudioContext.destination);
+      source.start(0);
+    } catch (e) {
+      console.log('Audio init:', e);
+    }
+  }
+
+  function playTapSound() {
+    const now = Date.now();
+    if (now - lastTapTime < TAP_DEBOUNCE) return;
+    lastTapTime = now;
+
+    if (!audioUnlocked) {
+      unlockAudio();
+      // Retry after unlock
+      setTimeout(playTapSound, 30);
+      return;
+    }
+
+    if (!tapAudioContext) return;
+
+    try {
+      const oscillator = tapAudioContext.createOscillator();
+      const gainNode = tapAudioContext.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.value = 1000;
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(tapAudioContext.destination);
+
+      gainNode.gain.value = 0.3;
+
+      oscillator.start();
+      oscillator.stop(tapAudioContext.currentTime + 0.05);
+      
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, tapAudioContext.currentTime + 0.05);
+    } catch (e) {
+      console.log('Sound error:', e);
+    }
+  }
+
+  function handleTap(e) {
+    const now = Date.now();
+    if (now - lastTapTime < TAP_DEBOUNCE) return;
+    lastTapTime = now;
+
+    const x = e.touches ? e.touches[0].clientX : e.clientX;
+    const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+    // Interactive elements selector
+    const interactive = 'button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close, .changelog-tab, .palette-trigger, .icon-btn, .admin-menu-item, .btn, .btn-primary, .btn-outline, .brand, .footer-col a';
+    const target = e.target.closest(interactive);
+    
+    if (target) {
+      playTapSound();
+      showCrosshair(x, y);
+    }
+  }
+
+  // Unlock audio on first interaction
+  document.addEventListener('touchstart', unlockAudio, { once: true, passive: true });
+  document.addEventListener('mousedown', unlockAudio, { once: true, passive: true });
+
+  // Handle taps
+  document.addEventListener('touchstart', handleTap, { passive: true });
+  document.addEventListener('mousedown', handleTap, { passive: true });
 
   // ===== INITIALIZATION =====
   if (document.readyState === 'loading') {
