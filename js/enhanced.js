@@ -278,6 +278,36 @@
     }
   }
 
+
+  // Search results visibility - only show when typing, not full categories list
+  if (paletteInput) {
+    const resultsEl = document.getElementById('palette-results');
+    function updateResultsVisibility(){
+      if (!resultsEl) return;
+      const hasText = paletteInput.value.trim().length > 0;
+      if (hasText) {
+        resultsEl.classList.add('has-results');
+        resultsEl.style.display = 'block';
+      } else {
+        resultsEl.classList.remove('has-results');
+        resultsEl.style.display = 'none';
+      }
+    }
+    paletteInput.addEventListener('input', updateResultsVisibility);
+    // Initial state
+    updateResultsVisibility();
+    // When palette opens, ensure hidden if empty
+    const paletteOverlay = document.getElementById('palette-overlay');
+    if (paletteOverlay) {
+      const observer = new MutationObserver(()=>{
+        if (paletteOverlay.classList.contains('open')) {
+          updateResultsVisibility();
+        }
+      });
+      observer.observe(paletteOverlay, { attributes:true, attributeFilter:['class'] });
+    }
+  }
+
   // ===== 14. CHANGELOG MODAL =====
   const changelogLink = $('#changelog-link');
   const changelogOverlay = $('#changelog-overlay');
