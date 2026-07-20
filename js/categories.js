@@ -1429,7 +1429,7 @@
   /* ---------------- CHANGELOG: APPS PANE ----------------
      Newest first, grouped by month, using each app's added date. */
   function buildAppLog(){
-    const pane = $('#log-pane-apps');
+    const pane = $('#changelog-apps');
     if(!pane) return;
 
     // Merge the live activity feed with an "added" event per app (covers
