@@ -1206,3 +1206,184 @@ a {
   50%{ transform: scale(1.06); box-shadow: 0 0 14px rgba(255,180,84,0.35); }
 }
 
+
+
+/* ========== Category Pills - Glass Panel Matching Upload Select Menu + Full Names ========== */
+.cat-grid{
+  position: relative !important;
+  isolation: isolate;
+  /* exact match to .select-menu from upload popup: rgba(18,18,22,.72) blur 14px */
+  background: rgba(18,18,22,0.72) !important;
+  border: 1px solid var(--panel-border) !important;
+  backdrop-filter: blur(14px) !important;
+  -webkit-backdrop-filter: blur(14px) !important;
+  border-radius: 16px !important;
+  padding: 10px !important;
+  gap: 8px !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  box-shadow:
+    0 18px 50px -24px rgba(0,0,0,0.85),
+    0 0 0 1px rgba(255,255,255,0.03) inset !important;
+}
+@media (min-width: 560px){
+  .cat-grid{
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+    padding: 12px !important;
+    border-radius: 18px !important;
+  }
+}
+@media (min-width: 900px){
+  .cat-grid{
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+    padding: 14px !important;
+    gap: 10px !important;
+  }
+}
+@media (max-width: 360px){
+  .cat-grid{
+    grid-template-columns: 1fr !important;
+  }
+}
+.cat-grid::before{
+  content:'';
+  position: absolute;
+  inset: -20px;
+  background:
+    radial-gradient(ellipse 35% 55% at 18% 22%, rgba(255,180,84,0.09), transparent 60%),
+    radial-gradient(ellipse 28% 42% at 85% 30%, rgba(120,130,255,0.07), transparent 60%);
+  filter: blur(22px);
+  -webkit-filter: blur(22px);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.8;
+}
+.cat-grid > *{ position: relative; z-index: 1; }
+
+/* pills - nav-like glass, full name visible, no truncation */
+.cat-pill{
+  position: relative !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding: 10px 12px 10px 10px !important;
+  min-height: 54px !important;
+  height: auto !important;
+  border-radius: 12px !important;
+  backdrop-filter: blur(12px) saturate(1.1) !important;
+  -webkit-backdrop-filter: blur(12px) saturate(1.1) !important;
+  background: rgba(255,255,255,0.045) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.05) inset,
+    0 6px 16px -12px rgba(0,0,0,0.6) !important;
+  transition: all 180ms ease !important;
+}
+.cat-pill:hover{
+  background: rgba(255,255,255,0.075) !important;
+  border-color: rgba(255,180,84,0.26) !important;
+  transform: translateY(-1px) !important;
+}
+
+.cat-pill .cat-ico{
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  border-radius: 8px !important;
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  flex-shrink: 0 !important;
+}
+
+.cat-pill-body{
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+}
+
+.cat-pill .cat-name{
+  font-size: 13.5px !important;
+  font-weight: 560 !important;
+  line-height: 1.18 !important;
+  color: var(--text) !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  word-break: break-word !important;
+  overflow-wrap: anywhere !important;
+  display: block !important;
+  max-width: 100% !important;
+  letter-spacing: -0.01em !important;
+}
+
+.cat-pill .cat-count{
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+  font-size: 10.5px !important;
+  padding: 3px 7px !important;
+}
+
+/* Featured spans full width to show full description */
+.cat-pill-featured{
+  grid-column: 1 / -1 !important;
+  background: linear-gradient(105deg, 
+    rgba(255,180,84,0.20),
+    rgba(255,160,85,0.24),
+    rgba(255,210,130,0.18),
+    rgba(255,180,84,0.20)
+  ) !important;
+  background-size: 220% 220% !important;
+  animation: featGradientShift 3.4s ease-in-out infinite !important;
+  border-color: rgba(255,180,84,0.32) !important;
+  min-height: 62px !important;
+}
+.cat-pill-featured .cat-name{
+  font-size: 14px !important;
+  font-weight: 650 !important;
+  color: var(--accent) !important;
+}
+.cat-pill-featured .cat-body-sub{
+  font-size: 11px;
+  color: var(--text-dim);
+  line-height: 1.25;
+  margin-top: 2px;
+  white-space: normal;
+  display: block;
+}
+
+/* keep animations */
+@keyframes featGradientShift{
+  0%{ background-position: 0% 50%; }
+  50%{ background-position: 100% 50%; }
+  100%{ background-position: 0% 50%; }
+}
+@keyframes featShimmer{
+  0%{ transform: translateX(-130%); }
+  100%{ transform: translateX(130%); }
+}
+.cat-pill-featured::before{
+  background: linear-gradient(180deg, rgba(255,255,255,0.11), transparent 60%) !important;
+}
+.cat-pill-featured::after{
+  content:'';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 18%, rgba(255,255,255,0.22) 50%, transparent 82%);
+  transform: translateX(-130%);
+  animation: featShimmer 2.9s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.6;
+}
+.cat-pill-featured .cat-ico{
+  animation: featIcoPulse 3.6s ease-in-out infinite;
+}
+@keyframes featIcoPulse{
+  0%,100%{ transform: scale(1); }
+  50%{ transform: scale(1.06); }
+}

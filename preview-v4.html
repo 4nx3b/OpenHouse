@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>v4 - select-menu blur + full names + MC hit</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#07070a;--text:#efeee9;--text-dim:#9a9aa1;--panel-border:rgba(255,255,255,.09);--accent:#ffb454;--font-display:'Space Grotesk',sans-serif}
+body{background:var(--bg);color:var(--text);font-family:var(--font-display);margin:0;padding:20px 0 100px}
+h2{text-align:center} p.sub{text-align:center;color:var(--text-dim);font-size:12px;max-width:600px;margin:8px auto 20px;line-height:1.5}
+</style>
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style-enhanced.css">
+</head><body>
+<h2>v4 - Blur = Upload Category Select + Full names visible</h2>
+<p class="sub">Background = rgba(18,18,22,.72) blur 14px like .select-menu. Pills show full names (no M...), grid 2-col but wraps, featured spans full width. Sound = real Minecraft hit1.ogg from YouTube link.</p>
+<div class="cat-grid" id="grid"></div>
+<script>
+const cats=[
+  {name:'Featured', count:4, icon:'✦', feat:true, sub:'The best of the best handpicked apps will be shown here.'},
+  {name:'Media', count:9, icon:'♪'},
+  {name:'Productivity', count:23, icon:'✓'},
+  {name:'Finance', count:4, icon:'$'},
+  {name:'Dev Tools', count:3, icon:'◧'},
+  {name:'Notes', count:2, icon:'✎'},
+  {name:'Utilities', count:5, icon:'⚙'},
+  {name:'Communication', count:2, icon:'✉'},
+  {name:'Design', count:0, icon:'◐'},
+  {name:'Security', count:0, icon:'🔒'},
+  {name:'Health', count:1, icon:'♥'},
+  {name:'Tools', count:23, icon:'🧰'},
+  {name:'Music', count:18, icon:'•'},
+  {name:'Social', count:4, icon:'•'},
+  {name:'Anime', count:9, icon:'•'},
+  {name:'AI', count:3, icon:'•'},
+  {name:'Root', count:3, icon:'•'},
+  {name:'Multi Media', count:2, icon:'•'},
+  {name:'Manga', count:1, icon:'•'},
+  {name:'Custom', count:2, icon:'•'},
+];
+const grid=document.getElementById('grid');
+cats.forEach((c,i)=>{
+  const b=document.createElement('button');
+  b.className='cat-pill'+(c.feat?' cat-pill-featured':'');
+  b.style.setProperty('--i',i);
+  b.innerHTML=`<span class="cat-ico">${c.icon}</span><span class="cat-pill-body"><span class="cat-name">${c.name}</span>${c.sub?`<span class="cat-body-sub">${c.sub}</span>`:''}</span><span class="cat-count">${c.count}</span>`;
+  grid.appendChild(b);
+});
+</script>
+<script src="js/enhanced.js"></script>
+</body></html>
