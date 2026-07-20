@@ -3,13 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Openhouse — Open source apps, built in the open</title>
+<title>Openhouse</title>
 <meta name="description" content="A curated directory of open source apps. No telemetry, no lock-in, free forever.">
 <meta name="theme-color" content="#07070a">
 <link rel="icon" type="image/png" href="img/favicon.png">
 <link rel="apple-touch-icon" href="img/icon-192.png">
 <link rel="manifest" href="manifest.json">
-<!-- Open Graph / share cards -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Openhouse">
 <meta property="og:title" content="Openhouse — Open source apps, built in the open">
@@ -19,17 +18,14 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Openhouse — Open source apps, built in the open">
-<meta name="twitter:description" content="A curated directory of open source apps. No telemetry, no lock-in, free forever.">
-<meta name="twitter:image" content="https://openhouse-one.vercel.app/img/og-card.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style-enhanced.css">
 </head>
 <body>
 
-<!-- ============ LOADING SCREEN ============ -->
 <div class="loader" id="loader">
   <div class="loader-logo" aria-hidden="true">
     <svg width="52" height="52" viewBox="0 0 24 24" fill="none">
@@ -44,15 +40,15 @@
   <p class="loader-label"><span id="loader-pct">0</span><em>%</em></p>
 </div>
 
-<!-- ============ AMBIENT LAYERS ============ -->
 <div class="grain" aria-hidden="true"></div>
 <div class="scanlines" aria-hidden="true"></div>
 <div class="spotlight" id="spotlight" aria-hidden="true"></div>
-
-<!-- ============ SCROLL PROGRESS ============ -->
 <div class="scroll-progress" id="scroll-progress"></div>
 
-<!-- ============ TOP BAR ============ -->
+<button class="back-to-top" aria-label="Back to top">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+</button>
+
 <header class="topbar">
   <a class="brand" href="#top" data-cursor="pointer">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -63,13 +59,11 @@
     </svg>
     <span>Openhouse</span>
   </a>
-
   <button class="palette-trigger" id="palette-trigger" data-cursor="pointer">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
     <span>Search apps</span>
     <kbd>⌘K</kbd>
   </button>
-
   <div class="admin-menu-wrap" id="admin-menu-wrap">
     <button class="icon-btn" id="admin-menu-trigger" data-cursor="pointer" title="Menu" aria-label="Menu" aria-haspopup="true" aria-expanded="false">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="12" cy="19" r="1.7"/></svg>
@@ -84,8 +78,6 @@
 </header>
 
 <main id="top">
-
-  <!-- ============ HERO ============ -->
   <section class="hero">
     <canvas id="particles" aria-hidden="true"></canvas>
     <div class="fog" aria-hidden="true"></div>
@@ -93,35 +85,19 @@
     <div class="hero-content">
       <p class="eyebrow reveal-up"><span class="dot"></span> <span id="hero-app-count">Open source</span> apps · community maintained</p>
       <h1 class="split-title" id="hero-title">Open source.<br>Built in the open.</h1>
-      <p class="hero-sub reveal-up">
-        Openhouse is a hand-picked directory of open source apps —
-        no telemetry, no dark patterns, no vendor lock-in. Every listing
-        links straight to the repo. Fork it, read it, ship it.
-      </p>
+      <p class="hero-sub reveal-up">Openhouse is a hand-picked directory of open source apps — no telemetry, no dark patterns, no vendor lock-in. Every listing links straight to the repo. Fork it, read it, ship it.</p>
       <div class="hero-actions reveal-up">
-        <a class="btn btn-primary" href="#apps" data-cursor="pointer" data-magnetic>
-          Browse the directory
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        </a>
-        <a class="btn btn-outline" href="#submit" data-cursor="pointer" data-magnetic>
-          Submit an app
-        </a>
+        <a class="btn btn-primary" href="#apps" data-cursor="pointer" data-magnetic>Browse the directory<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 12h14m0 0l-6-6m6 6l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
+        <a class="btn btn-outline" href="#submit" data-cursor="pointer" data-magnetic>Submit an app</a>
       </div>
     </div>
-
     <div class="marquee" aria-hidden="true">
       <div class="marquee-track">
-        <span>MIT</span><span>·</span><span>GPL-3.0</span><span>·</span><span>Apache-2.0</span><span>·</span>
-        <span>No telemetry</span><span>·</span><span>Self-hostable</span><span>·</span><span>Free forever</span><span>·</span>
-        <span>Community reviewed</span><span>·</span>
-        <span>MIT</span><span>·</span><span>GPL-3.0</span><span>·</span><span>Apache-2.0</span><span>·</span>
-        <span>No telemetry</span><span>·</span><span>Self-hostable</span><span>·</span><span>Free forever</span><span>·</span>
-        <span>Community reviewed</span><span>·</span>
+        <span>MIT</span><span>·</span><span>GPL-3.0</span><span>·</span><span>Apache-2.0</span><span>·</span><span>No telemetry</span><span>·</span><span>Self-hostable</span><span>·</span><span>Free forever</span><span>·</span><span>Community reviewed</span><span>·</span><span>MIT</span><span>·</span><span>GPL-3.0</span><span>·</span><span>Apache-2.0</span><span>·</span><span>No telemetry</span><span>·</span><span>Self-hostable</span><span>·</span><span>Free forever</span><span>·</span><span>Community reviewed</span><span>·</span>
       </div>
     </div>
   </section>
 
-  <!-- ============ STATS ============ -->
   <section class="stats">
     <div class="stat reveal-up"><span class="stat-num" data-count="220">0</span><span class="stat-label">Apps listed</span></div>
     <div class="stat reveal-up"><span class="stat-num" data-count="12">0</span><span class="stat-label">Categories</span></div>
@@ -129,7 +105,6 @@
     <div class="stat reveal-up"><span class="stat-num" data-count="100" data-suffix="%">0</span><span class="stat-label">Source available</span></div>
   </section>
 
-  <!-- ============ STICKY STORYTELLING ============ -->
   <section class="story" id="story">
     <div class="story-pin">
       <div class="story-art" aria-hidden="true">
@@ -145,22 +120,18 @@
     </div>
   </section>
 
-  <!-- ============ DIRECTORY — CATEGORIES ============ -->
   <section class="showcase" id="apps">
     <div class="showcase-head">
       <p class="eyebrow reveal-up">Directory</p>
       <h2 class="typewrite" data-typewrite>Pick your next daily driver.</h2>
       <p class="showcase-sub reveal-up">Browse open source apps by what they do. Tap a category to open its collection — sort by newest or oldest, and page through the lot.</p>
     </div>
-
-    <div class="cat-grid reveal-up" id="cat-grid"><!-- category pills injected by js/categories.js --></div>
+    <div class="cat-grid reveal-up" id="cat-grid"></div>
   </section>
 
-  <!-- ============ FEATURES ============ -->
   <section class="features" id="features">
     <p class="eyebrow reveal-up">Why Openhouse</p>
     <h2 class="typewrite" data-typewrite>Every listing earns its place.</h2>
-
     <div class="feature-grid">
       <article class="feature-card tilt-card reveal-up">
         <div class="card-glow"></div>
@@ -189,7 +160,6 @@
     </div>
   </section>
 
-  <!-- ============ SUBMIT / DOWNLOAD CTA ============ -->
   <section class="download" id="submit">
     <div class="download-card tilt-card">
       <div class="card-glow"></div>
@@ -197,17 +167,12 @@
       <h2 class="typewrite" data-typewrite>Know an app that belongs here?</h2>
       <p class="download-sub">If you want an app to be posted here, send me a text on my Telegram.</p>
       <div class="download-actions">
-        <button class="btn btn-primary" id="submit-btn" data-cursor="pointer" data-magnetic>
-          Submit a repo
-        </button>
-        <a class="btn btn-outline" href="https://github.com/4nx3b/Open-Source-Apps" target="_blank" rel="noopener" data-cursor="pointer" data-magnetic>
-          Star on GitHub
-        </a>
+        <button class="btn btn-primary" id="submit-btn" data-cursor="pointer" data-magnetic>Submit a repo</button>
+        <a class="btn btn-outline" href="https://github.com/4nx3b/Open-Source-Apps" target="_blank" rel="noopener" data-cursor="pointer" data-magnetic>Star on GitHub</a>
       </div>
       <p class="fine-print"><span id="cta-app-count">Apps</span> reviewed by the community, one by one.</p>
     </div>
   </section>
-
 </main>
 
 <footer class="footer">
@@ -242,7 +207,6 @@
   </div>
 </footer>
 
-<!-- ============ FLOATING DOCK ============ -->
 <nav class="dock" id="dock" aria-label="Quick navigation">
   <a href="#top" data-label="Home" data-cursor="pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M3 11l9-8 9 8M5 10v10h14V10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   <a href="#apps" data-label="Apps" data-cursor="pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.8"/></svg></a>
@@ -250,7 +214,6 @@
   <a href="#submit" data-label="Submit" data-cursor="pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></a>
 </nav>
 
-<!-- ============ COMMAND PALETTE ============ -->
 <div class="palette-overlay" id="palette-overlay">
   <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
     <div class="palette-input-row">
@@ -258,13 +221,10 @@
       <input type="text" id="palette-input" placeholder="Search apps and categories…" autocomplete="off">
       <kbd>Esc</kbd>
     </div>
-    <ul class="palette-results" id="palette-results">
-      <!-- apps + categories injected by js/categories.js -->
-    </ul>
+    <ul class="palette-results" id="palette-results"></ul>
   </div>
 </div>
 
-<!-- ============ WELCOME POPUP ============ -->
 <div class="modal-overlay" id="welcome-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Welcome">
     <button class="modal-close" id="welcome-close" data-cursor="pointer" aria-label="Close">✕</button>
@@ -275,7 +235,6 @@
   </div>
 </div>
 
-<!-- ============ SHORTCUTS POPUP ============ -->
 <div class="modal-overlay" id="shortcuts-overlay">
   <div class="modal" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts">
     <button class="modal-close" id="shortcuts-close" data-cursor="pointer" aria-label="Close">✕</button>
@@ -286,22 +245,20 @@
       <li><span>Show shortcuts</span><kbd>?</kbd></li>
       <li><span>Close any panel</span><kbd>Esc</kbd></li>
       <li><span>Jump to directory</span><kbd>G</kbd> <kbd>A</kbd></li>
+      <li><span>Back to top</span><kbd>Home</kbd></li>
     </ul>
   </div>
 </div>
 
-<!-- ============ CATEGORY POPUP ============ -->
 <div class="modal-overlay" id="cat-overlay">
   <div class="modal cat-modal" role="dialog" aria-modal="true" aria-label="Category">
     <button class="modal-close" id="cat-close" data-cursor="pointer" aria-label="Close">✕</button>
     <h3 id="cat-title">Category</h3>
     <p class="cat-meta" id="cat-meta">0 apps</p>
-
     <div class="cat-app-list" id="cat-list"></div>
   </div>
 </div>
 
-<!-- ============ OWNER LOGIN POPUP ============ -->
 <div class="modal-overlay" id="login-overlay">
   <div class="modal login-modal" role="dialog" aria-modal="true" aria-label="Owner sign in">
     <button class="modal-close" id="login-close" data-cursor="pointer" aria-label="Close">✕</button>
@@ -315,47 +272,24 @@
   </div>
 </div>
 
-<!-- ============ UPLOAD APP POPUP ============ -->
 <div class="modal-overlay" id="upload-overlay">
   <div class="modal upload-modal" role="dialog" aria-modal="true" aria-label="Upload app">
     <button class="modal-close" id="upload-close" data-cursor="pointer" aria-label="Close">✕</button>
     <h3>Upload an app</h3>
     <p class="upload-sub">List a new open source app in the directory.</p>
     <form class="upload-form" id="upload-form" autocomplete="off">
-      <label class="field">
-        <span>App name</span>
-        <input type="text" id="up-name" placeholder="e.g. Waveline" autocomplete="off">
-      </label>
-      <label class="field">
-        <span>Category</span>
-        <select id="up-category"></select>
-      </label>
-      <label class="field" id="up-newcat-field" hidden>
-        <span>New category name</span>
-        <input type="text" id="up-newcat" placeholder="e.g. Music" autocomplete="off">
-      </label>
-      <label class="field" id="up-newcat-icon-field" hidden>
-        <span>Category icon <em>(optional)</em></span>
-        <input type="text" id="up-newcat-icon" class="emoji-input" placeholder="🎵" autocomplete="off" maxlength="16">
-        <small class="field-hint">Type an emoji with your keyboard, or copy one from a site like emojipedia.org / getemoji.com and paste it here.</small>
-      </label>
-      <label class="field">
-        <span>Repository link <em>(GitHub · GitLab · Codeberg · Gitea · Bitbucket)</em></span>
+      <label class="field"><span>App name</span><input type="text" id="up-name" placeholder="e.g. Waveline" autocomplete="off"></label>
+      <label class="field"><span>Category</span><select id="up-category"></select></label>
+      <label class="field" id="up-newcat-field" hidden><span>New category name</span><input type="text" id="up-newcat" placeholder="e.g. Music" autocomplete="off"></label>
+      <label class="field"><span>Repository link <em>(GitHub · GitLab · Codeberg · Gitea · Bitbucket)</em></span>
         <div class="field-row">
           <input type="url" id="up-repo" placeholder="https://github.com/owner/repo" autocomplete="off">
           <button type="button" class="btn btn-outline" id="up-fetch" data-cursor="pointer">Auto-fill</button>
         </div>
         <small class="field-hint" id="up-repo-hint">Paste a repo URL and I'll pull the description automatically.</small>
       </label>
-      <label class="field">
-        <span>Description</span>
-        <textarea id="up-desc" rows="3" placeholder="What does this app do?"></textarea>
-      </label>
-      <label class="field">
-        <span>Thumbnail <em>(optional)</em></span>
-        <input type="file" id="up-thumb" accept="image/*">
-        <img class="thumb-preview" id="up-thumb-preview" alt="" hidden>
-      </label>
+      <label class="field"><span>Description</span><textarea id="up-desc" rows="3" placeholder="What does this app do?"></textarea></label>
+      <label class="field"><span>Thumbnail <em>(optional)</em></span><input type="file" id="up-thumb" accept="image/*"><img class="thumb-preview" id="up-thumb-preview" alt="" hidden></label>
       <input type="hidden" id="up-license">
       <p class="login-error" id="upload-error"></p>
       <div class="upload-actions">
@@ -366,83 +300,20 @@
   </div>
 </div>
 
-<!-- ============ CATEGORY ICON POPUP (owner) ============ -->
 <div class="modal-overlay" id="icon-overlay">
   <div class="modal icon-modal" role="dialog" aria-modal="true" aria-label="Change category icon">
     <button class="modal-close" id="icon-close" data-cursor="pointer" aria-label="Close">✕</button>
     <h3>Icon for <span id="icon-cat-name">Category</span></h3>
     <p>Type an emoji with your keyboard (Win + . on Windows, the emoji key on mobile), or copy one from a site like emojipedia.org and paste it below.</p>
-    <div class="icon-preview-row">
-      <span class="cat-ico icon-preview" id="icon-current" aria-hidden="true">•</span>
-      <span class="field-hint">Live preview</span>
-    </div>
+    <div class="icon-preview-row"><span class="cat-ico icon-preview" id="icon-current" aria-hidden="true">•</span><span class="field-hint">Live preview</span></div>
     <form class="login-form" id="icon-form" autocomplete="off">
       <input type="text" id="icon-input" class="emoji-input" placeholder="e.g. 🎵 🧭 📚" autocomplete="off" maxlength="16">
-      <div class="upload-actions">
-        <button type="button" class="btn btn-outline" id="icon-reset" data-cursor="pointer" hidden>Reset to default</button>
-        <button type="submit" class="btn btn-primary" data-cursor="pointer">Save icon</button>
-      </div>
+      <div class="upload-actions"><button type="button" class="btn btn-outline" id="icon-reset" data-cursor="pointer" hidden>Reset</button><button type="submit" class="btn btn-primary" data-cursor="pointer">Save icon</button></div>
     </form>
     <p class="login-error" id="icon-error"></p>
   </div>
 </div>
 
-<!-- ============ CHANGELOG POPUP ============ -->
-<div class="modal-overlay" id="changelog-overlay">
-  <div class="modal info-modal" role="dialog" aria-modal="true" aria-label="Changelog">
-    <button class="modal-close" id="changelog-close" data-cursor="pointer" aria-label="Close">✕</button>
-    <span class="modal-eyebrow">Changelog</span>
-    <h3>What's new on Openhouse.</h3>
-    <div class="log-tabs" role="tablist" aria-label="Changelog sections">
-      <button class="log-tab active" id="log-tab-site" role="tab" aria-selected="true" data-pane="site" data-cursor="pointer">Website</button>
-      <button class="log-tab" id="log-tab-apps" role="tab" aria-selected="false" data-pane="apps" data-cursor="pointer">Apps</button>
-    </div>
-    <div class="info-scroll" id="log-pane-site" role="tabpanel">
-      <div class="log-entry">
-        <span class="log-date">July 2026</span>
-        <ul class="info-list">
-          <li>Openhouse is now installable — add it to your home screen as an app, works offline.</li>
-          <li>Share any app with a direct link that opens straight to it.</li>
-          <li>Live activity feed in this changelog's <em>Apps</em> tab.</li>
-          <li>Cards show when each repo was last updated.</li>
-          <li>Auto-fill now reads GitLab, Codeberg, Gitea and Bitbucket repos too.</li>
-          <li>Bulk actions for the owner: select multiple apps to star, move or delete.</li>
-          <li>Skeleton loading, proper link previews when sharing the site, and a styled delete confirmation.</li>
-          <li>App cards: owner actions bundled into a tidy per-card menu.</li>
-          <li>Edit published apps in place — name, category, description, repo, thumbnail.</li>
-          <li>Footer credit: made by reze.</li>
-          <li>Apps now live in a shared database — uploads appear for every visitor instantly.</li>
-          <li>Star system: hand-picked apps also show up in <em>Featured</em>.</li>
-          <li>Tag editor — apps can carry custom tags alongside category and license.</li>
-          <li>Typewriter headings and story artwork that changes as you scroll.</li>
-          <li>Search now covers apps and categories only — faster and cleaner.</li>
-          <li>Custom emoji icons per category, plus category delete for the owner.</li>
-          <li>Big performance pass: smoother scrolling on low-end phones.</li>
-        </ul>
-      </div>
-      <div class="log-entry">
-        <span class="log-date">June 2026</span>
-        <ul class="info-list">
-          <li>Category directory with paginated popups replaced the old card row.</li>
-          <li>Owner area: sign in, upload apps with GitHub auto-fill, delete apps.</li>
-          <li>Command palette (⌘K), keyboard shortcuts, floating dock.</li>
-        </ul>
-      </div>
-      <div class="log-entry">
-        <span class="log-date">May 2026</span>
-        <ul class="info-list">
-          <li>Openhouse launched — a hand-reviewed directory of open source apps.</li>
-        </ul>
-      </div>
-    </div>
-    <div class="info-scroll" id="log-pane-apps" role="tabpanel" hidden>
-      <!-- app history injected by js/categories.js -->
-      <p class="log-empty" id="log-apps-empty">No apps published yet.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ============ TAG EDITOR POPUP (owner) ============ -->
 <div class="modal-overlay" id="tags-overlay">
   <div class="modal tags-modal" role="dialog" aria-modal="true" aria-label="Edit tags">
     <button class="modal-close" id="tags-close" data-cursor="pointer" aria-label="Close">✕</button>
@@ -450,35 +321,22 @@
     <p>Add, edit or remove the tags shown on this app's card. Press Enter or comma to add.</p>
     <div class="tags-chips" id="tags-chips"></div>
     <form class="tags-form" id="tags-form" autocomplete="off">
-      <div class="field-row">
-        <input type="text" id="tags-input" placeholder="e.g. android, music, offline" autocomplete="off" maxlength="24">
-        <button type="button" class="btn btn-outline" id="tags-add" data-cursor="pointer">Add</button>
-      </div>
+      <div class="field-row"><input type="text" id="tags-input" placeholder="e.g. android, music, offline" autocomplete="off" maxlength="24"><button type="button" class="btn btn-outline" id="tags-add" data-cursor="pointer">Add</button></div>
       <p class="login-error" id="tags-error"></p>
-      <div class="upload-actions">
-        <button type="button" class="btn btn-outline" id="tags-cancel" data-cursor="pointer">Cancel</button>
-        <button type="submit" class="btn btn-primary" data-cursor="pointer">Save tags</button>
-      </div>
+      <div class="upload-actions"><button type="button" class="btn btn-outline" id="tags-cancel" data-cursor="pointer">Cancel</button><button type="submit" class="btn btn-primary" data-cursor="pointer">Save tags</button></div>
     </form>
   </div>
 </div>
 
-<!-- ============ CONFIRM DIALOG ============ -->
 <div class="modal-overlay" id="confirm-overlay">
   <div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-title" aria-describedby="confirm-msg">
-    <div class="confirm-icon" aria-hidden="true">
-      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
+    <div class="confirm-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <h3 id="confirm-title">Are you sure?</h3>
     <p id="confirm-msg">This cannot be undone.</p>
-    <div class="upload-actions confirm-actions">
-      <button type="button" class="btn btn-outline" id="confirm-cancel" data-cursor="pointer">Cancel</button>
-      <button type="button" class="btn btn-danger" id="confirm-ok" data-cursor="pointer">Delete</button>
-    </div>
+    <div class="upload-actions confirm-actions"><button type="button" class="btn btn-outline" id="confirm-cancel" data-cursor="pointer">Cancel</button><button type="button" class="btn btn-danger" id="confirm-ok" data-cursor="pointer">Delete</button></div>
   </div>
 </div>
 
-<!-- ============ TOASTS ============ -->
 <div class="toast-stack" id="toast-stack"></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
@@ -489,6 +347,7 @@
 <script src="js/particles.js"></script>
 <script src="js/main.js"></script>
 <script src="js/categories.js"></script>
+<script src="js/enhanced.js"></script>
 <script>
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
@@ -496,5 +355,5 @@ if('serviceWorker' in navigator){
   });
 }
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a1df42f5ccef3501',t:'MTc4NDUyMjE1MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
