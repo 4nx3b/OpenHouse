@@ -119,24 +119,66 @@
     });
   }
 
-  // ===== 7. TILT CARDS =====
-  if (!isTouch && !reduced) {
-    $$('.tilt-card').forEach(card => {
+  // ===== 7. TILT CARDS (Why Openhouse - localized press lift) =====
+  if (!reduced) {
+    $$('.feature-card').forEach(card => {
       let rect = null;
-      card.addEventListener('mousemove', (e) => {
+      let raf = null;
+
+      const applyTilt = (clientX, clientY) => {
         if (!rect) rect = card.getBoundingClientRect();
-        const px = (e.clientX - rect.left) / rect.width;
-        const py = (e.clientY - rect.top) / rect.height;
-        const rotY = (px - 0.5) * 12;
-        const rotX = (0.5 - py) * 12;
-        card.style.transform = `perspective(800px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(8px)`;
+
+        const px = (clientX - rect.left) / rect.width;
+        const py = (clientY - rect.top) / rect.height;
+
+        // Localized tilt: stronger rotation when pressing near edges/corners
+        const rotY = (px - 0.5) * 18;           // horizontal tilt
+        const rotX = (0.5 - py) * 16;           // vertical tilt
+
+        // Extra lift/bury based on vertical position
+        const lift = (0.5 - py) * 22;           // positive = lift, negative = bury
+
+        card.style.transition = 'transform 0.12s cubic-bezier(0.23, 1, 0.32, 1)';
+        card.style.transform = `
+          perspective(900px)
+          rotateX(${rotX}deg)
+          rotateY(${rotY}deg)
+          translateZ(${lift}px)
+        `;
+
+        // Glow follows cursor
         card.style.setProperty('--mx', (px * 100) + '%');
         card.style.setProperty('--my', (py * 100) + '%');
-      });
-      card.addEventListener('mouseleave', () => {
-        rect = null;
-        card.style.transform = 'perspective(800px) rotateX(0) rotateY(0) translateZ(0)';
-      });
+      };
+
+      const resetTilt = () => {
+        if (raf) cancelAnimationFrame(raf);
+        card.style.transition = 'transform 0.35s cubic-bezier(0.23, 1, 0.32, 1)';
+        card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0)';
+      };
+
+      // Desktop mouse
+      if (!isTouch) {
+        card.addEventListener('mousemove', (e) => {
+          if (raf) cancelAnimationFrame(raf);
+          raf = requestAnimationFrame(() => applyTilt(e.clientX, e.clientY));
+        });
+        card.addEventListener('mouseleave', resetTilt);
+      }
+
+      // Mobile touch support (localized tilt)
+      card.addEventListener('touchstart', (e) => {
+        rect = card.getBoundingClientRect();
+        applyTilt(e.touches[0].clientX, e.touches[0].clientY);
+      }, { passive: true });
+
+      card.addEventListener('touchmove', (e) => {
+        if (raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(() => applyTilt(e.touches[0].clientX, e.touches[0].clientY));
+      }, { passive: true });
+
+      card.addEventListener('touchend', resetTilt);
+      card.addEventListener('touchcancel', resetTilt);
     });
   }
 
