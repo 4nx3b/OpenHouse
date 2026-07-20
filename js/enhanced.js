@@ -440,40 +440,50 @@
   }
 
   const interactiveSel='button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close, .changelog-tab, .palette-trigger, .icon-btn, .admin-menu-item, .btn, .btn-primary, .btn-outline, .brand, .footer-col a';
+  // Only these should play the Minecraft damage sound
+  const SOUND_ALLOWED_SEL='.modal-close, #welcome-dismiss, #upload-form button[type="submit"], #login-form button[type="submit"], #icon-form button[type="submit"], #tags-form button[type="submit"], #confirm-ok, #upload-cancel, #confirm-cancel, #tags-cancel, #icon-close, #icon-reset';
   let lastTouchTs = 0;
   let lastSoundTs = 0;
-  let pointerDownActive = false;
 
   function handleInteraction(e){
-    // Suppress mouse event that fires after touch (double sound bug)
+    // still show crosshair for all interactive (visual feedback)
+    const t=e.target.closest(interactiveSel);
+    if(t){
+      const x=e.touches?e.touches[0].clientX:e.clientX;
+      const y=e.touches?e.touches[0].clientY:e.clientY;
+      const isPill=t.classList.contains('cat-pill');
+      const isBtn=t.classList.contains('btn')||t.classList.contains('btn-primary');
+      // crosshair only tiny X for pill clicks? user wants tiny X, keep.
+      showCrosshair(x,y,isPill?'is-pill':isBtn?'is-btn':'');
+    }
+
+    // Sound only on specific triggers
     if (e.type === 'touchstart') {
       lastTouchTs = Date.now();
     }
     if (e.type === 'mousedown' && Date.now() - lastTouchTs < 450) {
       return; // synthetic mouse after touch
     }
-    // Debounce rapid triggers (Chrome sometimes fires touch+pointer)
     if (Date.now() - lastSoundTs < 110) return;
 
-    const t=e.target.closest(interactiveSel);
-    if(!t) return;
+    const st = e.target.closest(SOUND_ALLOWED_SEL);
+    if(!st) return;
 
-    const x=e.touches?e.touches[0].clientX:e.clientX;
-    const y=e.touches?e.touches[0].clientY:e.clientY;
-
-    const isPill=t.classList.contains('cat-pill');
-    const isBtn=t.classList.contains('btn')||t.classList.contains('btn-primary');
-
+    // Check type - only allow:
+    // - .modal-close (dismiss X in any popup)
+    // - #welcome-dismiss
+    // - publish button: #upload-form button[type="submit"]
+    // - login button: #login-form button[type="submit"]
+    // For safety also allow cancel/dismiss buttons inside modals
     lastSoundTs = Date.now();
-    playTapSound(isPill?'pill':isBtn?'btn':'click');
-    showCrosshair(x,y,isPill?'is-pill':isBtn?'is-btn':'');
+    playTapSound();
   }
 
   // unlock
   ['touchstart','touchend','mousedown','keydown','pointerdown'].forEach(ev=>{
     document.addEventListener(ev, unlockAudio, {once:true, passive:true});
   });
-  // Use pointerdown as primary (covers mouse+touch), keep touch/mouse as fallback but debounced
+  // Visual crosshair + sound listeners
   document.addEventListener('pointerdown', handleInteraction, {passive:true});
   document.addEventListener('touchstart', handleInteraction, {passive:true});
   document.addEventListener('mousedown', handleInteraction, {passive:true});
