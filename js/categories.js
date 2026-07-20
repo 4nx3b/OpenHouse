@@ -519,42 +519,71 @@
     }
   }
 
-  /* Scroll the popup list to a specific app card and flash it - FIXED */
+  /* Scroll the popup list to a specific app card and flash it - FIXED v3 */
   function scrollToApp(name){
+    const MAX_TRIES = 20;
     let tries = 0;
     function attempt(){
-      const card = listEl ? listEl.querySelector(`[data-name="${CSS.escape ? CSS.escape(name) : name.replace(/"/g,'\"')}"]`) : null;
-      const target = card || ($$ && $$('.cat-app', listEl).find(c => c.dataset.name === name));
-      if(!target){
-        if(tries < 12){
+      const list = listEl;
+      if(!list){ 
+        if(tries < MAX_TRIES){ tries++; setTimeout(attempt, 100); }
+        return;
+      }
+      // Find card case-insensitive fallback
+      let card = null;
+      try{
+        const escName = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/"/g,'\"');
+        card = list.querySelector(`[data-name="${escName}"]`);
+      }catch(e){}
+      if(!card){
+        // fallback: find by dataset lowercase
+        card = $$('.cat-app', list).find(c => (c.dataset.name||'').toLowerCase() === name.toLowerCase());
+      }
+      if(!card){
+        if(tries < MAX_TRIES){
           tries++;
           setTimeout(attempt, 120);
         }
         return;
       }
-      // Use rAF to ensure layout is stable after entrance anim
+      // Wait for list to have scrollHeight
+      if(list.scrollHeight <= list.clientHeight && tries < MAX_TRIES){
+        tries++;
+        setTimeout(attempt, 100);
+        return;
+      }
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
           try{
-            const cRect = target.getBoundingClientRect();
-            const lRect = listEl.getBoundingClientRect();
-            // calculate offset to center card in container
-            const offset = target.offsetTop - (listEl.clientHeight/2 - target.clientHeight/2);
-            // Clamp offset
-            const maxScroll = listEl.scrollHeight - listEl.clientHeight;
-            const clamped = Math.max(0, Math.min(offset, maxScroll));
-            listEl.scrollTo({ top: clamped, behavior: 'smooth' });
+            // Ensure card is not display:none
+            const cardTop = card.offsetTop;
+            const listH = list.clientHeight;
+            const cardH = card.offsetHeight;
+            // Center it
+            let targetTop = cardTop - (listH/2 - cardH/2);
+            // Add small offset for header
+            targetTop = Math.max(0, Math.min(targetTop, list.scrollHeight - listH));
+            // First jump instantly close, then smooth
+            list.scrollTop = targetTop;
+            // Then smooth fine-tune (helps Chrome sometimes stopping mid)
+            setTimeout(()=>{
+              list.scrollTo({ top: targetTop, behavior: 'smooth' });
+            }, 50);
           }catch(e){
-            // fallback to scrollIntoView if calculation fails
-            try{ target.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){}
+            try{ card.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){}
           }
-          target.classList.add('located');
-          setTimeout(()=> target.classList.remove('located'), 2400);
+          // Prevent entrance animation from restarting (blink bug)
+          try{ card.style.animation = 'none'; }catch(e){}
+          // Flash without triggering blink
+          card.classList.remove('located');
+          void card.offsetWidth;
+          card.classList.add('located');
+          setTimeout(()=> card.classList.remove('located'), 2600);
         });
       });
     }
-    // Wait for popup + card entrance (was 380, now 520 + retries)
-    setTimeout(attempt, 520);
+    // Initial delay for popup open animation (longer than before)
+    setTimeout(attempt, 650);
   }
 
   // deep link: #app=Name opens that app's category popup on load
