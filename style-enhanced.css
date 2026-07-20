@@ -747,6 +747,21 @@ a {
    19. TOUCH CROSSHAIR INDICATOR
    ============================================================ */
 
+@keyframes crosshairHit {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.5);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
 #touch-crosshair {
   position: fixed;
   pointer-events: none;
@@ -754,8 +769,11 @@ a {
   height: 20px;
   opacity: 0;
   z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: opacity 0.1s ease;
+  transform: translate(-50%, -50%) scale(0.5);
+}
+
+#touch-crosshair.active {
+  animation: crosshairHit 0.15s ease-out forwards;
 }
 
 #touch-crosshair::before,
@@ -766,7 +784,6 @@ a {
   left: 50%;
   background: var(--accent);
   transform: translate(-50%, -50%);
-  transition: opacity 0.1s ease;
   border-radius: 1px;
 }
 
