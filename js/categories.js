@@ -410,13 +410,21 @@
       // rAF-throttled tilt: layout is read once per hover, painted once per frame
       $$('.cat-app', listEl).forEach(card => {
         let rect = null, raf = null, pending = null;
-        card.addEventListener('mouseenter', () => { rect = card.getBoundingClientRect(); });
+        card.addEventListener('mouseenter', () => {
+          if(card.dataset.menuOpen === '1') return; // don't tilt while its menu is open
+          rect = card.getBoundingClientRect();
+        });
         card.addEventListener('mousemove', e => {
+          // The ⋮ button sits right in the card's corner; a click/hover there
+          // sits at an extreme edge of the card, which drove an extreme tilt
+          // that visually grows the card and clips it against the popup edge.
+          // Skip the tilt entirely while this card's menu is open.
+          if(card.dataset.menuOpen === '1') return;
           pending = e;
           if(raf) return;
           raf = requestAnimationFrame(() => {
             raf = null;
-            if(!pending || !rect) return;
+            if(!pending || !rect || card.dataset.menuOpen === '1') return;
             const px = (pending.clientX - rect.left) / rect.width;
             const py = (pending.clientY - rect.top) / rect.height;
             if(!reduced){
@@ -487,6 +495,7 @@
     <button class="cat-menu-item owner-only cat-menu-danger" data-act="delete" role="menuitem" data-cursor="pointer">Delete app</button>`;
   document.body.appendChild(cardMenu);
   let cardMenuCtx = null; // { cat, name }
+  let cardMenuOpenCard = null; // the .cat-app element whose menu is currently open
 
   function toggleCardMenu(btn, cat, name, starred){
     if(cardMenu.classList.contains('open') && cardMenuCtx && cardMenuCtx.name === name && cardMenuCtx.cat === cat){
@@ -494,6 +503,16 @@
       return;
     }
     cardMenuCtx = { cat, name };
+    // The ⋮ button sits in the card's corner, right where the tilt-hover
+    // effect is most extreme. Reset any tilt transform now and suppress it
+    // for as long as the menu stays open, so the card doesn't visually grow
+    // and clip against the popup's edge.
+    const card = btn.closest('.cat-app');
+    if(card){
+      card.style.transform = '';
+      card.dataset.menuOpen = '1';
+      cardMenuOpenCard = card;
+    }
     cardMenu.querySelector('[data-act="star"]').textContent = starred ? 'Unstar' : 'Star app';
     cardMenu.querySelectorAll('.owner-only').forEach(el => { el.hidden = !isAdmin; });
     // position: below the button, right-aligned; flip up if no room
@@ -509,7 +528,14 @@
     cardMenu.classList.toggle('up', flipUp);
     cardMenu.classList.add('open');
   }
-  function closeCardMenu(){ cardMenu.classList.remove('open'); cardMenuCtx = null; }
+  function closeCardMenu(){
+    cardMenu.classList.remove('open');
+    cardMenuCtx = null;
+    if(cardMenuOpenCard){
+      delete cardMenuOpenCard.dataset.menuOpen;
+      cardMenuOpenCard = null;
+    }
+  }
 
   cardMenu.addEventListener('click', e => e.stopPropagation());
   cardMenu.querySelectorAll('.cat-menu-item').forEach(item => {
