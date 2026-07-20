@@ -563,9 +563,18 @@ a {
    ============================================================ */
 
 .changelog-modal {
-  max-width: 600px;
-  max-height: 80vh;
-  overflow-y: auto;
+  width: min(600px, 92vw);
+  height: min(560px, 82vh);
+  max-height: 82vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: rgba(18,18,22,0.90);
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  box-shadow: 0 24px 64px -24px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 .changelog-tabs {
@@ -598,8 +607,13 @@ a {
 }
 
 .changelog-content {
+  flex: 1;
   margin-top: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.changelog-content::-webkit-scrollbar{ display:none; width:0; height:0; }
 
 .changelog-content p {
   color: var(--text-dim);
