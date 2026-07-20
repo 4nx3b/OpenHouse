@@ -212,14 +212,7 @@
   // ===== 13. SEARCH BAR EXPAND + Keyboard glitch fix =====
   const paletteInput = $('#palette-input');
   if (paletteInput) {
-    const originalWidth = paletteInput.parentElement.style.width || 'auto';
     paletteInput.addEventListener('focus', () => {
-      // Prevent iOS zoom + keep visible when keyboard opens
-      if (window.matchMedia('(max-width: 640px)').matches) {
-        // Don't expand width on mobile - causes cut off
-      } else {
-        paletteInput.parentElement.style.width = '280px';
-      }
       // Scroll palette into view after keyboard appears
       setTimeout(()=>{
         try{
@@ -240,7 +233,6 @@
       }, 350);
     });
     paletteInput.addEventListener('blur', () => {
-      paletteInput.parentElement.style.width = originalWidth;
       const overlayEl = $('#palette-overlay');
       if (overlayEl) overlayEl.style.paddingBottom = '';
     });
