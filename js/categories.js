@@ -519,24 +519,51 @@
     }
   }
 
-  /* Scroll the popup list to a specific app card and flash it - FIXED v3 */
+  /* Scroll the popup list to a specific app card and flash it - FIXED v4 (no outline + handle lazy size shift) */
   function scrollToApp(name){
     const MAX_TRIES = 20;
     let tries = 0;
+    let observedCard = null;
+    let resizeObserver = null;
+    let reScrollTimeout = null;
+
+    function cleanup(){
+      if(resizeObserver && observedCard){
+        try{ resizeObserver.unobserve(observedCard); }catch(e){}
+      }
+      resizeObserver = null;
+      observedCard = null;
+      if(reScrollTimeout) clearTimeout(reScrollTimeout);
+    }
+
+    function centerCard(card){
+      const list = listEl;
+      if(!list || !card) return;
+      try{
+        const cardTop = card.offsetTop;
+        const listH = list.clientHeight;
+        const cardH = card.offsetHeight;
+        let targetTop = cardTop - (listH/2 - cardH/2);
+        const maxScroll = list.scrollHeight - listH;
+        targetTop = Math.max(0, Math.min(targetTop, maxScroll));
+        list.scrollTo({ top: targetTop, behavior: 'smooth' });
+      }catch(e){
+        try{ card.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){}
+      }
+    }
+
     function attempt(){
       const list = listEl;
-      if(!list){ 
+      if(!list){
         if(tries < MAX_TRIES){ tries++; setTimeout(attempt, 100); }
         return;
       }
-      // Find card case-insensitive fallback
       let card = null;
       try{
         const escName = (window.CSS && CSS.escape) ? CSS.escape(name) : name.replace(/"/g,'\"');
         card = list.querySelector(`[data-name="${escName}"]`);
       }catch(e){}
       if(!card){
-        // fallback: find by dataset lowercase
         card = $$('.cat-app', list).find(c => (c.dataset.name||'').toLowerCase() === name.toLowerCase());
       }
       if(!card){
@@ -546,7 +573,6 @@
         }
         return;
       }
-      // Wait for list to have scrollHeight
       if(list.scrollHeight <= list.clientHeight && tries < MAX_TRIES){
         tries++;
         setTimeout(attempt, 100);
@@ -554,36 +580,34 @@
       }
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
-          try{
-            // Ensure card is not display:none
-            const cardTop = card.offsetTop;
-            const listH = list.clientHeight;
-            const cardH = card.offsetHeight;
-            // Center it
-            let targetTop = cardTop - (listH/2 - cardH/2);
-            // Add small offset for header
-            targetTop = Math.max(0, Math.min(targetTop, list.scrollHeight - listH));
-            // First jump instantly close, then smooth
-            list.scrollTop = targetTop;
-            // Then smooth fine-tune (helps Chrome sometimes stopping mid)
-            setTimeout(()=>{
-              list.scrollTo({ top: targetTop, behavior: 'smooth' });
-            }, 50);
-          }catch(e){
-            try{ card.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){}
-          }
-          // Prevent entrance animation from restarting (blink bug)
           try{ card.style.animation = 'none'; }catch(e){}
-          // Flash without triggering blink
-          card.classList.remove('located');
-          void card.offsetWidth;
-          card.classList.add('located');
-          setTimeout(()=> card.classList.remove('located'), 2600);
+          centerCard(card);
+          // No outline per user request - do NOT add located class
+          // Re-center if lazy-loaded updated timestamp increases card size
+          observedCard = card;
+          if('ResizeObserver' in window){
+            resizeObserver = new ResizeObserver(()=>{
+              // Debounce re-center
+              if(reScrollTimeout) clearTimeout(reScrollTimeout);
+              reScrollTimeout = setTimeout(()=> centerCard(card), 80);
+            });
+            resizeObserver.observe(card);
+            // Stop observing after 4s
+            setTimeout(cleanup, 4000);
+          } else {
+            // Fallback: re-center a few times as lazy data loads
+            let count = 0;
+            const iv = setInterval(()=>{
+              centerCard(card);
+              count++;
+              if(count > 8){ clearInterval(iv); }
+            }, 350);
+            setTimeout(()=> clearInterval(iv), 4000);
+          }
         });
       });
     }
-    // Initial delay for popup open animation (longer than before)
-    setTimeout(attempt, 650);
+    setTimeout(attempt, 600);
   }
 
   // deep link: #app=Name opens that app's category popup on load

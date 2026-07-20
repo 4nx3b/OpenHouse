@@ -154,6 +154,16 @@
 
   // ===== 9. DOCK NAVIGATION ACTIVE STATE =====
   const dock = $('#dock');
+  const dockIndicator = $('#dock-indicator');
+  function moveDockIndicator(activeLink){
+    if(!dockIndicator || !dock || !activeLink) return;
+    const dockRect = dock.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+    const offsetX = (linkRect.left - dockRect.left) + (linkRect.width - dockIndicator.offsetWidth)/2;
+    const offsetY = (linkRect.top - dockRect.top) + (linkRect.height - dockIndicator.offsetHeight)/2;
+    dockIndicator.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(1)`;
+    dockIndicator.style.opacity = '1';
+  }
   if (dock) {
     const dockLinks = $$('a, button', dock);
     function updateDockActive() {
@@ -168,12 +178,24 @@
         if (scrollPos >= sectionTop && (nextTop ? scrollPos < nextTop : true)) {
           dockLinks.forEach(link => link.classList.remove('active'));
           const activeLink = dockLinks.find(link => link.getAttribute('href') === `#${sectionId}`);
-          if (activeLink) activeLink.classList.add('active');
+          if (activeLink){
+            activeLink.classList.add('active');
+            moveDockIndicator(activeLink);
+          }
         }
       });
     }
     window.addEventListener('scroll', updateDockActive, { passive: true });
+    window.addEventListener('resize', ()=>{
+      const active = dock.querySelector('a.active, button.active');
+      if(active) moveDockIndicator(active);
+    }, {passive:true});
     updateDockActive();
+    // initial
+    setTimeout(()=>{
+      const active = dock.querySelector('a.active, button.active') || dockLinks[0];
+      if(active) moveDockIndicator(active);
+    }, 400);
   }
 
   // ===== 10. KEYBOARD NAVIGATION =====

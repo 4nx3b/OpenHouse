@@ -204,11 +204,24 @@
 
   /* ============ DOCK: ACTIVE SECTION (filled icon) ============ */
   const dockLinks = $$('.dock a[href^="#"]');
+  const dockIndicator = $('#dock-indicator');
+  const dockEl = $('#dock');
+  function moveDockIndicator(activeLink){
+    if(!dockIndicator || !dockEl || !activeLink) return;
+    const dockRect = dockEl.getBoundingClientRect();
+    const linkRect = activeLink.getBoundingClientRect();
+    const x = linkRect.left - dockRect.left;
+    const y = linkRect.top - dockRect.top;
+    // Center indicator on link
+    const offsetX = x + (linkRect.width - dockIndicator.offsetWidth)/2;
+    const offsetY = y + (linkRect.height - dockIndicator.offsetHeight)/2;
+    dockIndicator.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(1)`;
+    dockIndicator.style.opacity = '1';
+  }
   if(dockLinks.length && 'IntersectionObserver' in window){
-    const hrefFor = new Map(); // section element -> dock href
+    const hrefFor = new Map();
     dockLinks.forEach(a => {
       const href = a.getAttribute('href');
-      // '#top' is the whole <main>; represent it by the hero section instead
       const target = href === '#top' ? $('.hero') : $(href);
       if(target) hrefFor.set(target, href);
     });
@@ -216,11 +229,37 @@
       entries.forEach(entry => {
         if(!entry.isIntersecting) return;
         const href = hrefFor.get(entry.target);
-        dockLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === href));
+        dockLinks.forEach(a => {
+          const isActive = a.getAttribute('href') === href;
+          a.classList.toggle('active', isActive);
+          if(isActive){
+            moveDockIndicator(a);
+          }
+        });
       });
     }, { rootMargin: '-40% 0px -50% 0px' });
     hrefFor.forEach((href, sec) => dockIo.observe(sec));
+    // Initial position
+    const initActive = dockLinks.find(a => a.classList.contains('active')) || dockLinks[0];
+    if(initActive){
+      // wait for layout
+      setTimeout(()=> moveDockIndicator(initActive), 300);
+    }
+    // Reposition on resize
+    window.addEventListener('resize', ()=>{
+      const active = dockLinks.find(a => a.classList.contains('active'));
+      if(active) moveDockIndicator(active);
+    }, {passive:true});
   }
+  // Also handle click fluid
+  dockLinks.forEach(link=>{
+    link.addEventListener('click', ()=>{
+      dockLinks.forEach(a=>a.classList.remove('active'));
+      link.classList.add('active');
+      moveDockIndicator(link);
+    });
+  });
+
 
   /* ============ REVEAL ON SCROLL ============ */
   function initReveals(){
