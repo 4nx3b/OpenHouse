@@ -982,23 +982,28 @@ a{ transition:color .25s ease; }
   overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   scrollbar-width:none; -ms-overflow-style:none;
   margin-top:4px; min-height:0;
-  /* Smooth fade on top + bottom */
+}
+.info-scroll::-webkit-scrollbar{ display:none; width:0; }
+
+/* Dynamic fade for changelog (same as category popup) */
+.info-scroll.has-top-fade {
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 12%, black 100%);
+}
+.info-scroll.has-bottom-fade {
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, black 88%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 0%, black 88%, transparent 100%);
+}
+.info-scroll.has-top-fade.has-bottom-fade {
   -webkit-mask-image: linear-gradient(
     to bottom,
-    transparent 0%,
-    black 12%,
-    black 88%,
-    transparent 100%
+    transparent 0%, black 12%, black 88%, transparent 100%
   );
   mask-image: linear-gradient(
     to bottom,
-    transparent 0%,
-    black 12%,
-    black 88%,
-    transparent 100%
+    transparent 0%, black 12%, black 88%, transparent 100%
   );
 }
-.info-scroll::-webkit-scrollbar{ display:none; width:0; }
 .info-list{ display:flex; flex-direction:column; gap:12px; }
 .info-list li{
   position:relative; padding-left:22px;
