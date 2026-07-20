@@ -1,41 +1,16 @@
 /**
  * OpenHouse Enhanced Features
  * All additive - does not modify existing functionality
- * Dark mode toggle has been removed
+ * No dark mode toggle
  */
-
 (function() {
   'use strict';
-
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const isTouch = window.matchMedia('(hover: none)').matches;
-  const $ = (s, ctx = document) => (ctx || document).querySelector(s);
-  const $$ = (s, ctx = document) => Array.from((ctx || document).querySelectorAll(s));
+  const $ = (s, ctx) => (ctx || document).querySelector(s);
+  const $$ = (s, ctx) => Array.from((ctx || document).querySelectorAll(s));
 
-  // ============================================================
-  // 1. SCROLL REVEAL ANIMATIONS
-  // ============================================================
-  if (!reduced) {
-    const revealElements = $$('.reveal-up, .feature-card, .stat, .cat-pill');
-    
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('in');
-          if (entry.target.classList.contains('cat-pill')) {
-            const index = Array.from(entry.target.parentNode.children).indexOf(entry.target);
-            entry.target.style.setProperty('--i', index);
-          }
-        }
-      });
-    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
-
-    revealElements.forEach(el => revealObserver.observe(el));
-  }
-
-  // ============================================================
-  // 2. BACK TO TOP BUTTON
-  // ============================================================
+  // ===== 1. BACK TO TOP BUTTON =====
   function createBackToTop() {
     const btn = document.createElement('button');
     btn.className = 'back-to-top';
@@ -51,14 +26,10 @@
     document.body.appendChild(btn);
     return btn;
   }
-
   const backToTop = createBackToTop();
 
-  // ============================================================
-  // 3. TOAST NOTIFICATIONS
-  // ============================================================
+  // ===== 2. TOAST NOTIFICATIONS =====
   const toastStack = $('#toast-stack');
-  
   function showToast(message) {
     if (!toastStack) return;
     const el = document.createElement('div');
@@ -73,41 +44,25 @@
     }, 3200);
     return el;
   }
+  if (window.showToast) window.showToast = showToast;
 
-  if (window.showToast) {
-    window.showToast = showToast;
+  // ===== 3. SCROLL REVEAL ANIMATIONS =====
+  if (!reduced) {
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in');
+          if (entry.target.classList.contains('cat-pill')) {
+            const index = Array.from(entry.target.parentNode.children).indexOf(entry.target);
+            entry.target.style.setProperty('--i', index);
+          }
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+    $$('.reveal-up, .feature-card, .stat, .cat-pill').forEach(el => revealObserver.observe(el));
   }
 
-  // ============================================================
-  // 4. MODAL ANIMATIONS
-  // ============================================================
-  const modalOverlays = $$('.modal-overlay');
-  modalOverlays.forEach(overlay => {
-    const modal = $('.modal', overlay);
-    if (!modal) return;
-    modal.style.opacity = '0';
-    modal.style.transform = 'scale(0.92) translateY(20px)';
-  });
-
-  // ============================================================
-  // 5. SEARCH ENHANCEMENTS
-  // ============================================================
-  const paletteInput = $('#palette-input');
-  const paletteOverlay = $('#palette-overlay');
-
-  if (paletteInput && paletteOverlay) {
-    const originalWidth = paletteInput.parentElement.style.width || 'auto';
-    paletteInput.addEventListener('focus', () => {
-      paletteInput.parentElement.style.width = '280px';
-    });
-    paletteInput.addEventListener('blur', () => {
-      paletteInput.parentElement.style.width = originalWidth;
-    });
-  }
-
-  // ============================================================
-  // 6. STATS COUNTER
-  // ============================================================
+  // ===== 4. STATS COUNTER ANIMATION =====
   const stats = $$('.stat-num[data-count]');
   if (stats.length && !reduced) {
     const statsObserver = new IntersectionObserver((entries) => {
@@ -120,13 +75,11 @@
     }, { threshold: 0.5 });
     stats.forEach(stat => statsObserver.observe(stat));
   }
-
   function animateCounter(target) {
     const countTo = parseInt(target.dataset.count) || 0;
     const suffix = target.dataset.suffix || '';
     const duration = 2.5;
     const startTime = performance.now();
-
     function update(currentTime) {
       const elapsed = (currentTime - startTime) / 1000;
       const progress = Math.min(elapsed / duration, 1);
@@ -142,9 +95,7 @@
     requestAnimationFrame(update);
   }
 
-  // ============================================================
-  // 7. TYPEWRITER EFFECT
-  // ============================================================
+  // ===== 5. TYPEWRITER EFFECT =====
   const typewriteElements = $$('[data-typewrite]');
   if (typewriteElements.length && !reduced) {
     typewriteElements.forEach(el => {
@@ -153,20 +104,13 @@
       el.style.visibility = 'visible';
       let i = 0;
       const typeInterval = setInterval(() => {
-        if (i < text.length) {
-          el.textContent += text.charAt(i);
-          i++;
-        } else {
-          clearInterval(typeInterval);
-          el.classList.add('done');
-        }
+        if (i < text.length) { el.textContent += text.charAt(i); i++; }
+        else { clearInterval(typeInterval); el.classList.add('done'); }
       }, 50);
     });
   }
 
-  // ============================================================
-  // 8. MAGNETIC BUTTONS
-  // ============================================================
+  // ===== 6. MAGNETIC BUTTONS =====
   if (!isTouch && !reduced) {
     $$('[data-magnetic]').forEach(el => {
       el.addEventListener('mousemove', (e) => {
@@ -181,9 +125,7 @@
     });
   }
 
-  // ============================================================
-  // 9. TILT CARDS
-  // ============================================================
+  // ===== 7. TILT CARDS =====
   if (!isTouch && !reduced) {
     $$('.tilt-card').forEach(card => {
       let rect = null;
@@ -204,9 +146,7 @@
     });
   }
 
-  // ============================================================
-  // 10. MARQUEE
-  // ============================================================
+  // ===== 8. MARQUEE PAUSE ON HOVER =====
   const marquee = $('.marquee');
   const marqueeTrack = $('.marquee-track');
   if (marquee && marqueeTrack) {
@@ -218,9 +158,7 @@
     });
   }
 
-  // ============================================================
-  // 11. DOCK NAVIGATION
-  // ============================================================
+  // ===== 9. DOCK NAVIGATION ACTIVE STATE =====
   const dock = $('#dock');
   if (dock) {
     const dockLinks = $$('a, button', dock);
@@ -244,20 +182,18 @@
     updateDockActive();
   }
 
-  // ============================================================
-  // 12. KEYBOARD NAVIGATION
-  // ============================================================
+  // ===== 10. KEYBOARD NAVIGATION =====
   document.addEventListener('keydown', (e) => {
     const tag = (e.target.tagName || '').toLowerCase();
     const typing = tag === 'input' || tag === 'textarea';
     if (typing) return;
 
+    // Escape: Close modals
     if (e.key === 'Escape') {
-      $$('.modal-overlay.open').forEach(overlay => {
-        overlay.classList.remove('open');
-      });
+      $$('.modal-overlay.open').forEach(overlay => overlay.classList.remove('open'));
     }
 
+    // G + A: Jump to apps
     if (e.key === 'g' && !e.target.closest('input')) {
       const appsSection = $('#apps');
       if (appsSection) {
@@ -269,15 +205,14 @@
       }
     }
 
+    // Home: Back to top
     if (e.key === 'Home') {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   });
 
-  // ============================================================
-  // 13. SCROLL PROGRESS
-  // ============================================================
+  // ===== 11. SCROLL PROGRESS BAR =====
   const progressBar = $('#scroll-progress');
   if (progressBar) {
     window.addEventListener('scroll', () => {
@@ -287,9 +222,7 @@
     }, { passive: true });
   }
 
-  // ============================================================
-  // 14. BACK TO TOP VISIBILITY
-  // ============================================================
+  // ===== 12. BACK TO TOP VISIBILITY =====
   if (backToTop) {
     window.addEventListener('scroll', () => {
       if (window.scrollY > 400) {
@@ -300,9 +233,19 @@
     }, { passive: true });
   }
 
-  // ============================================================
-  // INITIALIZATION
-  // ============================================================
+  // ===== 13. SEARCH BAR EXPAND =====
+  const paletteInput = $('#palette-input');
+  if (paletteInput) {
+    const originalWidth = paletteInput.parentElement.style.width || 'auto';
+    paletteInput.addEventListener('focus', () => {
+      paletteInput.parentElement.style.width = '280px';
+    });
+    paletteInput.addEventListener('blur', () => {
+      paletteInput.parentElement.style.width = originalWidth;
+    });
+  }
+
+  // ===== INITIALIZATION =====
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -314,6 +257,6 @@
     console.log('✨ OpenHouse Enhanced Features Loaded');
   }
 
-  // Export
+  // Export for external use
   window.OpenHouseEnhanced = { showToast, init };
 })();
