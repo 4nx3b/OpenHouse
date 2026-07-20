@@ -252,46 +252,108 @@
   function openChangelog() {
     if (!changelogOverlay || !changelogContent) return;
     
-    // Load changelog data from localStorage if available
-    let changelogHTML = '<p>No recent changes.</p>';
-    
-    try {
-      const changelogData = JSON.parse(localStorage.getItem('openhouse-changelog') || '[]');
-      
-      if (changelogData.length > 0) {
-        changelogHTML = '';
-        const grouped = {};
-        
-        // Group by date
-        changelogData.forEach(item => {
-          const date = item.date || 'Unknown';
-          if (!grouped[date]) grouped[date] = [];
-          grouped[date].push(item);
-        });
-        
-        // Sort dates descending
-        const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
-        
-        sortedDates.forEach(date => {
-          changelogHTML += `<div class="changelog-date">${date}</div>`;
-          grouped[date].forEach(item => {
-            const actionClass = item.action ? item.action.toLowerCase() : 'added';
-            changelogHTML += `
-              <div class="changelog-item">
-                <span class="changelog-action ${actionClass}">${item.action || 'Added'}</span>
-                <span>${item.name || 'Unknown app'}</span>
-              </div>
-            `;
-          });
-        });
-      }
-    } catch (e) {
-      console.error('Error loading changelog:', e);
-    }
-    
+    let changelogHTML = '<p>Loading changelog...</p>';
     changelogContent.innerHTML = changelogHTML;
     changelogOverlay.classList.add('open');
     document.body.style.overflow = 'hidden';
+    
+    // Try to load from OpenHouse changelog system
+    setTimeout(() => {
+      try {
+        // Try to access the OpenHouse changelog data
+        let changelogData = [];
+        
+        // Check if OpenHouse has a changelog API or data
+        if (window.OpenHouse && window.OpenHouse.changelog) {
+          changelogData = window.OpenHouse.changelog;
+        } else if (typeof OpenHouseChangelog !== 'undefined') {
+          changelogData = OpenHouseChangelog;
+        } else {
+          // Try to get from localStorage or default to empty
+          const stored = localStorage.getItem('openhouse-changelog');
+          if (stored) {
+            changelogData = JSON.parse(stored);
+          }
+        }
+        
+        // If we have data, render it
+        if (changelogData && changelogData.length > 0) {
+          renderChangelog(changelogData);
+        } else {
+          // Show a default message with recent actions
+          changelogHTML = `
+            <div class="changelog-date">Recent Activity</div>
+            <div class="changelog-item">
+              <span class="changelog-action added">Added</span>
+              <span>New apps are being added regularly</span>
+            </div>
+            <div class="changelog-item">
+              <span class="changelog-action edited">Edited</span>
+              <span>App details are updated frequently</span>
+            </div>
+            <p style="margin-top: 1rem; color: var(--text-dim);">
+              Check back soon for more updates!
+            </p>
+          `;
+          changelogContent.innerHTML = changelogHTML;
+        }
+      } catch (e) {
+        console.error('Error loading changelog:', e);
+        // Fallback to a simple message
+        changelogContent.innerHTML = '<p>Changelog data is currently unavailable.</p>';
+      }
+    }, 100);
+  }
+
+  function renderChangelog(data) {
+    if (!changelogContent) return;
+    
+    const grouped = {};
+    
+    // Group by date
+    data.forEach(item => {
+      const date = item.date || 'Recent';
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(item);
+    });
+    
+    // Sort dates descending
+    const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+    
+    let changelogHTML = '';
+    
+    sortedDates.forEach(date => {
+      changelogHTML += `<div class="changelog-date">${formatDate(date)}</div>`;
+      grouped[date].forEach(item => {
+        const action = item.action || 'Added';
+        const actionClass = action.toLowerCase();
+        const name = item.name || item.title || 'Unknown app';
+        const category = item.category ? ` (${item.category})` : '';
+        
+        changelogHTML += `
+          <div class="changelog-item">
+            <span class="changelog-action ${actionClass}">${action}</span>
+            <span>${name}${category}</span>
+          </div>
+        `;
+      });
+    });
+    
+    changelogContent.innerHTML = changelogHTML || '<p>No changes recorded yet.</p>';
+  }
+
+  function formatDate(dateStr) {
+    try {
+      const date = new Date(dateStr);
+      if (isNaN(date.getTime())) return dateStr;
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    } catch (e) {
+      return dateStr;
+    }
   }
 
   function closeChangelog() {
