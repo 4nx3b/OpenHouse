@@ -752,13 +752,10 @@ a {
   pointer-events: none;
   width: 20px;
   height: 20px;
-  background: var(--accent);
-  border-radius: 50%;
   opacity: 0;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  transition: opacity 0.1s ease, transform 0.1s ease;
-  box-shadow: 0 0 10px rgba(255, 180, 84, 0.6);
+  transition: opacity 0.1s ease;
 }
 
 #touch-crosshair::before,
@@ -770,14 +767,17 @@ a {
   background: var(--accent);
   transform: translate(-50%, -50%);
   transition: opacity 0.1s ease;
+  border-radius: 1px;
 }
 
 #touch-crosshair::before {
   width: 2px;
-  height: 12px;
+  height: 14px;
+  box-shadow: 0 0 6px rgba(255, 180, 84, 0.8);
 }
 
 #touch-crosshair::after {
-  width: 12px;
+  width: 14px;
   height: 2px;
+  box-shadow: 0 0 6px rgba(255, 180, 84, 0.8);
 }
