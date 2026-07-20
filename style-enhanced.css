@@ -894,49 +894,7 @@ a {
 .cat-pill-featured .cat-count{background:var(--accent) !important;color:#0a0a0a !important;border-color:var(--accent) !important;font-weight:700 !important}
 
 
-/* ========== FIX 1: Search box glitch when keyboard open ========== */
-.palette-input-row input{
-  min-width: 0;
-  flex: 1;
-}
-@media (max-width: 640px){
-  .palette-overlay{
-    align-items: flex-start !important;
-    padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px)) !important;
-    padding-top: max(12px, 4dvh) !important;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  .palette{
-    width: 92vw !important;
-    max-width: none !important;
-    max-height: calc(100dvh - 24px) !important;
-    max-height: calc(100vh - 24px) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    margin: 0 auto !important;
-  }
-  .palette-input-row{
-    padding: 14px 14px !important;
-    gap: 10px !important;
-    flex-shrink: 0 !important;
-  }
-  .palette-input-row input{
-    font-size: 16px !important; /* prevent iOS zoom that cuts off */
-    min-width: 0 !important;
-  }
-  .palette-input-row kbd{
-    flex-shrink: 0 !important;
-  }
-  .palette-results{
-    max-height: none !important;
-    flex: 1 !important;
-    overflow-y: auto !important;
-    -webkit-overflow-scrolling: touch !important;
-    scrollbar-width: none;
-  }
-  .palette-results::-webkit-scrollbar{ display:none; }
-}
+
 
 /* ========== FIX 2 & 3: Auto-scroll + located flash blink ========== */
 .cat-app{
@@ -946,13 +904,10 @@ a {
 }
 .cat-app.located{
   border-color: var(--accent) !important;
-  /* No animation overriding catCardIn - only box-shadow flash */
-  animation: none !important;
-  /* use separate flash via box-shadow transition */
-  box-shadow: 0 0 0 3px rgba(255,180,84,0.55), 0 0 32px rgba(255,180,84,0.28) !important;
-  transform: scale(1.02) !important;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease !important;
+  box-shadow: 0 0 0 2px rgba(255,180,84,0.45), 0 0 24px rgba(255,180,84,0.22) !important;
+  transform: scale(1.01) !important;
   z-index: 2;
+  /* Do NOT override animation - keep catCardIn from base to avoid restart blink */
 }
 .cat-app.located::after{
   content: '';
@@ -972,4 +927,72 @@ a {
 @keyframes locatedFlash{
   0%{ box-shadow:0 0 0 3px rgba(255,180,84,.55), 0 0 34px rgba(255,180,84,.3); }
   100%{ box-shadow:0 0 0 2px rgba(255,180,84,.2), 0 0 16px rgba(255,180,84,.1); }
+}
+
+
+/* ========== FIX 1 v2: Search box keyboard glitch - full screen on mobile, no cut off ========== */
+.palette-input-row input{
+  min-width: 0;
+  flex: 1;
+}
+.palette-overlay{
+  overscroll-behavior: contain;
+}
+@media (max-width: 640px){
+  .palette-overlay{
+    align-items: stretch !important;
+    justify-content: flex-start !important;
+    padding: 0 !important;
+    background: rgba(7,7,10,0.96) !important;
+    backdrop-filter: blur(18px) !important;
+    -webkit-backdrop-filter: blur(18px) !important;
+  }
+  .palette{
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--panel-border) !important;
+    box-shadow: none !important;
+    display: flex !important;
+    flex-direction: column !important;
+    margin: 0 !important;
+    transform: none !important;
+    overflow: hidden !important;
+  }
+  .palette-overlay.open .palette{
+    transform: none !important;
+  }
+  .palette-input-row{
+    padding: 14px 16px !important;
+    gap: 10px !important;
+    flex-shrink: 0 !important;
+    background: var(--bg) !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 2 !important;
+    border-bottom: 1px solid var(--panel-border) !important;
+  }
+  .palette-input-row input{
+    font-size: 16px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+  .palette-input-row kbd{
+    flex-shrink: 0 !important;
+    display: flex !important;
+  }
+  .palette-results{
+    flex: 1 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  .palette-results::-webkit-scrollbar{ display:none !important; }
 }
