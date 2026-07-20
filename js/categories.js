@@ -353,6 +353,9 @@
           : `<p class="cat-empty">No apps in this category yet.</p>`);
     listEl.scrollTop = 0;
     bindCards();
+
+    // Dynamic top/bottom fade for category popup
+    setupDynamicFade(listEl);
   }
 
   function cardHTML(a, i){
@@ -374,6 +377,30 @@
         <span class="cat-updated" data-updated hidden></span>
       </div>
     </article>`;
+  }
+
+  // Dynamic scroll fade helper (used by both category + changelog)
+  function setupDynamicFade(scrollEl) {
+    if (!scrollEl) return;
+
+    function updateFade() {
+      const scrollTop = scrollEl.scrollTop;
+      const scrollHeight = scrollEl.scrollHeight;
+      const clientHeight = scrollEl.clientHeight;
+
+      const hasTop = scrollTop > 8;
+      const hasBottom = scrollTop + clientHeight < scrollHeight - 8;
+
+      scrollEl.classList.toggle('has-top-fade', hasTop);
+      scrollEl.classList.toggle('has-bottom-fade', hasBottom);
+    }
+
+    scrollEl.addEventListener('scroll', updateFade, { passive: true });
+    // Initial check
+    setTimeout(updateFade, 60);
+    // Re-check when content changes
+    const observer = new ResizeObserver(updateFade);
+    observer.observe(scrollEl);
   }
 
   function bindCards(){
@@ -1431,6 +1458,9 @@
   function buildAppLog(){
     const pane = $('#changelog-apps');
     if(!pane) return;
+
+    // Apply the exact same dynamic fade logic to changelog
+    setupDynamicFade(pane);
 
     // Merge the live activity feed with an "added" event per app (covers
     // apps published before activity logging existed). Deduplicate adds.
