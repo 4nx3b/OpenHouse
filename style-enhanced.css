@@ -1077,32 +1077,44 @@ a {
   position: fixed !important;
   /* keep existing styles but ensure indicator container */
 }
+.dock{
+  position: fixed !important;
+}
 .dock-indicator{
   position: absolute;
+  top: 10px;
+  left: 10px;
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: rgba(255,180,84,0.14);
-  border: 1px solid rgba(255,180,84,0.22);
-  box-shadow: 0 4px 16px -8px rgba(255,180,84,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+  background: rgba(255,180,84,0.16);
+  border: 1px solid rgba(255,180,84,0.24);
+  box-shadow: 0 4px 18px -8px rgba(255,180,84,0.55), inset 0 1px 0 rgba(255,255,255,0.08);
   pointer-events: none;
   z-index: 0;
   opacity: 0;
-  transform: translateX(0) scale(0.8);
-  transition: transform 0.5s cubic-bezier(.22, 1.4, .36, 1), opacity 0.3s ease, width 0.4s ease, height 0.4s ease, background 0.3s ease;
-  will-change: transform, opacity;
+  transform: translateX(0) translateY(0);
+  transition: transform 0.45s cubic-bezier(.22, 1.4, .36, 1), opacity 0.25s ease, background 0.3s ease;
+  will-change: transform;
 }
 .dock a{
   position: relative;
   z-index: 1;
+  width: 42px;
+  height: 42px;
 }
 .dock a.active{
-  background: transparent !important; /* indicator provides background */
+  background: transparent !important;
   color: var(--accent) !important;
 }
 .dock a.active svg *{
   stroke: var(--accent) !important;
+  fill: none !important;
 }
+.dock-indicator.show{
+  opacity: 1;
+}
+
 
 
 /* ========== FIX: Lazy updated timestamp shifts card size */
@@ -1122,4 +1134,122 @@ a {
 }
 .cat-app-body{
   min-height: 0;
+}
+
+
+/* ========== Modern Search Bar - Rounded + Blurred like animex.one ========== */
+.palette{
+  background: rgba(12,12,14,0.82) !important;
+  backdrop-filter: blur(24px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(1.2) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 80px -20px rgba(0,0,0,0.9), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+}
+
+.palette-input-row{
+  padding: 20px 20px 16px !important;
+  gap: 12px !important;
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+}
+
+/* Quick access label like animex */
+.palette-input-row::before{
+  content: 'Quick access:  CTRL  +  K';
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+  margin-bottom: 2px;
+  display: inline-block;
+}
+
+.palette-input-row > div,
+.palette-input-row > span{
+  width: 100%;
+}
+
+.palette-input-row{
+  position: relative;
+}
+
+.palette-input-row svg{
+  position: absolute;
+  left: 36px;
+  top: 50%;
+  transform: translateY(calc(-50% + 14px));
+  color: var(--text-faint) !important;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.palette-input-row input{
+  width: 100% !important;
+  height: 48px !important;
+  background: rgba(255,255,255,0.06) !important;
+  background: rgba(18,18,22,0.9) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 14px !important;
+  padding: 0 16px 0 44px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  color: var(--text) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 4px 20px -12px rgba(0,0,0,0.6) !important;
+  transition: all 0.2s ease !important;
+}
+
+.palette-input-row input::placeholder{
+  color: var(--text-faint) !important;
+  font-weight: 400 !important;
+}
+
+.palette-input-row input:focus{
+  background: rgba(255,255,255,0.09) !important;
+  border-color: rgba(255,180,84,0.32) !important;
+  box-shadow: 0 0 0 3px rgba(255,180,84,0.12), inset 0 1px 0 rgba(255,255,255,0.08) !important;
+  outline: none !important;
+}
+
+.palette-input-row kbd{
+  position: absolute !important;
+  right: 28px !important;
+  top: 50% !important;
+  transform: translateY(calc(-50% + 14px)) !important;
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  border-bottom-width: 2px !important;
+  border-radius: 8px !important;
+  padding: 5px 9px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--text-dim) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
+}
+
+/* Results list modern */
+.palette-results{
+  padding: 8px !important;
+}
+.palette-results li{
+  border-radius: 12px !important;
+  background: transparent !important;
+  border: 1px solid transparent !important;
+  transition: all 0.18s ease !important;
+}
+.palette-results li:hover,
+.palette-results li.active{
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+  transform: translateX(2px) !important;
 }
