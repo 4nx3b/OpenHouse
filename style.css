@@ -266,7 +266,8 @@ kbd{
 .feature-card{
   position:relative;overflow:hidden;padding:26px 22px;border-radius:var(--radius-md);
   background:var(--panel);border:1px solid var(--panel-border);backdrop-filter:blur(8px);
-  transform-style:preserve-3d;transition:transform .1s ease, border-color .3s ease;
+  transform-style:preserve-3d;transition:transform 0.35s cubic-bezier(0.23, 1, 0.32, 1), border-color .3s ease;
+  will-change: transform;
 }
 .feature-card:hover{border-color:var(--accent);}
 .f-tag{
