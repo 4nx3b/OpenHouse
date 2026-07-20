@@ -11,7 +11,6 @@
   const $$ = (s, ctx) => Array.from((ctx || document).querySelectorAll(s));
 
   // ===== 1. BACK TO TOP BUTTON =====
-  // Button already exists in HTML, just get reference
   const backToTop = $('.back-to-top');
   if (backToTop) {
     backToTop.addEventListener('click', () => {
@@ -183,7 +182,6 @@
     const typing = tag === 'input' || tag === 'textarea';
     if (typing) return;
 
-    // Escape: Close modals
     if (e.key === 'Escape') {
       $$('.modal-overlay.open').forEach(overlay => {
         overlay.classList.remove('open');
@@ -191,7 +189,6 @@
       document.body.style.overflow = '';
     }
 
-    // G + A: Jump to apps
     if (e.key === 'g' && !e.target.closest('input')) {
       const appsSection = $('#apps');
       if (appsSection) {
@@ -203,7 +200,6 @@
       }
     }
 
-    // Home: Back to top
     if (e.key === 'Home') {
       e.preventDefault();
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -250,8 +246,6 @@
 
   function openChangelog() {
     if (!changelogOverlay) return;
-    
-    // Show Website tab by default
     const websiteContent = $('#changelog-website');
     const appsContent = $('#changelog-apps');
     const tabs = $$('.changelog-tab');
@@ -278,20 +272,14 @@
     document.body.style.overflow = '';
   }
 
-  // Tab switching for changelog
   const changelogTabs = $$('.changelog-tab');
   changelogTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       const targetTab = tab.dataset.tab;
-      
-      // Update active tab
       changelogTabs.forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
-      
-      // Show/hide content
       const websiteContent = $('#changelog-website');
       const appsContent = $('#changelog-apps');
-      
       if (targetTab === 'website') {
         if (websiteContent) websiteContent.hidden = false;
         if (appsContent) appsContent.hidden = true;
@@ -321,66 +309,102 @@
     });
   }
 
-  // ===== 15. TAP SOUNDS FOR TOUCH DEVICES =====
-  let tapAudioContext = null;
-  let tapOscillator = null;
+  // ===== 15. TAP SOUNDS & CROSSHAIR FOR TOUCH DEVICES =====
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0 || navigator.msMaxTouchPoints > 0;
+  let tapAudioContext = null;
+  let lastTapTime = 0;
+  const TAP_DEBOUNCE = 200; // ms
 
-  function createTapSound() {
-    if (!isTouchDevice) return;
-    
-    try {
-      // Create audio context on first user interaction
-      if (!tapAudioContext) {
-        tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      
-      // Create a simple beep sound
-      if (tapOscillator) {
-        tapOscillator.stop();
-      }
-      
-      tapOscillator = tapAudioContext.createOscillator();
-      const gainNode = tapAudioContext.createGain();
-      
-      tapOscillator.type = 'sine';
-      tapOscillator.frequency.value = 800; // High-pitched beep
-      tapOscillator.connect(gainNode);
-      gainNode.connect(tapAudioContext.destination);
-      
-      // Short duration
-      gainNode.gain.setValueAtTime(0.1, tapAudioContext.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.01, tapAudioContext.currentTime + 0.05);
-      
-      tapOscillator.start();
-      tapOscillator.stop(tapAudioContext.currentTime + 0.05);
-    } catch (e) {
-      console.log('Tap sound not supported:', e);
-    }
-  }
-
-  // Add tap sound to interactive elements on touch devices
+  // Create crosshair element
   if (isTouchDevice) {
-    const tapElements = $$('button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close');
-    
-    tapElements.forEach(el => {
-      // Only add to elements that don't already have touch handlers
-      if (!el.hasAttribute('data-tap-sound')) {
-        el.setAttribute('data-tap-sound', 'true');
+    const crosshair = document.createElement('div');
+    crosshair.id = 'touch-crosshair';
+    crosshair.style.cssText = `
+      position: fixed;
+      pointer-events: none;
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--accent);
+      border-radius: 2px;
+      opacity: 0;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      box-shadow: 0 0 12px rgba(255, 180, 84, 0.4);
+    `;
+    crosshair.innerHTML = `
+      <svg width="10" height="10" viewBox="0 0 24 24" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);fill:var(--accent)">
+        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    `;
+    document.body.appendChild(crosshair);
+
+    function showCrosshair(x, y) {
+      const crosshair = $('#touch-crosshair');
+      if (!crosshair) return;
+      crosshair.style.left = x + 'px';
+      crosshair.style.top = y + 'px';
+      crosshair.style.opacity = '1';
+      crosshair.style.transform = 'translate(-50%, -50%) scale(1)';
+      setTimeout(() => {
+        crosshair.style.opacity = '0';
+        crosshair.style.transform = 'translate(-50%, -50%) scale(0.8)';
+      }, 150);
+    }
+
+    function playTapSound() {
+      const now = Date.now();
+      if (now - lastTapTime < TAP_DEBOUNCE) return;
+      lastTapTime = now;
+
+      try {
+        if (!tapAudioContext) {
+          tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+
+        const oscillator = tapAudioContext.createOscillator();
+        const gainNode = tapAudioContext.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(1000, tapAudioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(600, tapAudioContext.currentTime + 0.03);
         
-        el.addEventListener('touchstart', (e) => {
-          createTapSound();
-        }, { passive: true });
+        oscillator.connect(gainNode);
+        gainNode.connect(tapAudioContext.destination);
+
+        gainNode.gain.setValueAtTime(0.08, tapAudioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, tapAudioContext.currentTime + 0.03);
+
+        oscillator.start();
+        oscillator.stop(tapAudioContext.currentTime + 0.03);
+      } catch (e) {
+        console.log('Tap sound error:', e);
       }
-    });
+    }
+
+    function handleTap(e) {
+      const now = Date.now();
+      if (now - lastTapTime < TAP_DEBOUNCE) return;
+      lastTapTime = now;
+
+      const x = e.touches ? e.touches[0].clientX : e.clientX;
+      const y = e.touches ? e.touches[0].clientY : e.clientY;
+
+      // Only play sound and show crosshair for interactive elements
+      const target = e.target.closest('button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close, .changelog-tab');
+      if (target) {
+        playTapSound();
+        showCrosshair(x, y);
+      }
+    }
+
+    // Touch events
+    document.addEventListener('touchstart', handleTap, { passive: true });
     
-    // Also add to dynamically created elements
-    document.addEventListener('click', (e) => {
-      const target = e.target.closest('button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close');
-      if (target && isTouchDevice) {
-        createTapSound();
-      }
-    });
+    // Mouse events for touch devices (some hybrid devices)
+    if (isTouch) {
+      document.addEventListener('mousedown', handleTap);
+    }
   }
 
   // ===== INITIALIZATION =====
@@ -393,21 +417,8 @@
   function init() {
     document.body.classList.add('enhanced-loaded');
     console.log('✨ OpenHouse Enhanced Features Loaded');
-    
-    // Initialize audio context on first user interaction for mobile
-    if (isTouchDevice) {
-      document.addEventListener('touchstart', () => {
-        if (!tapAudioContext) {
-          try {
-            tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-          } catch (e) {
-            console.log('Audio context not available');
-          }
-        }
-      }, { once: true, passive: true });
-    }
   }
 
   // Export for external use
-  window.OpenHouseEnhanced = { showToast, init, createTapSound };
+  window.OpenHouseEnhanced = { showToast, init };
 })();
