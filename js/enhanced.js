@@ -11,22 +11,17 @@
   const $$ = (s, ctx) => Array.from((ctx || document).querySelectorAll(s));
 
   // ===== 1. BACK TO TOP BUTTON =====
-  function createBackToTop() {
-    const btn = document.createElement('button');
-    btn.className = 'back-to-top';
-    btn.innerHTML = '<svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-    btn.setAttribute('aria-label', 'Back to top');
-    btn.addEventListener('click', () => {
+  // Button already exists in HTML, just get reference
+  const backToTop = $('.back-to-top');
+  if (backToTop) {
+    backToTop.addEventListener('click', () => {
       if (typeof Lenis !== 'undefined' && window.OpenhouseLenis) {
         window.OpenhouseLenis.scrollTo(document.body, { offset: 0 });
       } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     });
-    document.body.appendChild(btn);
-    return btn;
   }
-  const backToTop = createBackToTop();
 
   // ===== 2. TOAST NOTIFICATIONS =====
   const toastStack = $('#toast-stack');
@@ -190,7 +185,10 @@
 
     // Escape: Close modals
     if (e.key === 'Escape') {
-      $$('.modal-overlay.open').forEach(overlay => overlay.classList.remove('open'));
+      $$('.modal-overlay.open').forEach(overlay => {
+        overlay.classList.remove('open');
+      });
+      document.body.style.overflow = '';
     }
 
     // G + A: Jump to apps
@@ -242,6 +240,82 @@
     });
     paletteInput.addEventListener('blur', () => {
       paletteInput.parentElement.style.width = originalWidth;
+    });
+  }
+
+  // ===== 14. CHANGELOG MODAL =====
+  const changelogLink = $('#changelog-link');
+  const changelogOverlay = $('#changelog-overlay');
+  const changelogClose = $('#changelog-close');
+  const changelogContent = $('#changelog-content');
+
+  function openChangelog() {
+    if (!changelogOverlay || !changelogContent) return;
+    
+    // Load changelog data from localStorage if available
+    let changelogHTML = '<p>No recent changes.</p>';
+    
+    try {
+      const changelogData = JSON.parse(localStorage.getItem('openhouse-changelog') || '[]');
+      
+      if (changelogData.length > 0) {
+        changelogHTML = '';
+        const grouped = {};
+        
+        // Group by date
+        changelogData.forEach(item => {
+          const date = item.date || 'Unknown';
+          if (!grouped[date]) grouped[date] = [];
+          grouped[date].push(item);
+        });
+        
+        // Sort dates descending
+        const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
+        
+        sortedDates.forEach(date => {
+          changelogHTML += `<div class="changelog-date">${date}</div>`;
+          grouped[date].forEach(item => {
+            const actionClass = item.action ? item.action.toLowerCase() : 'added';
+            changelogHTML += `
+              <div class="changelog-item">
+                <span class="changelog-action ${actionClass}">${item.action || 'Added'}</span>
+                <span>${item.name || 'Unknown app'}</span>
+              </div>
+            `;
+          });
+        });
+      }
+    } catch (e) {
+      console.error('Error loading changelog:', e);
+    }
+    
+    changelogContent.innerHTML = changelogHTML;
+    changelogOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeChangelog() {
+    if (!changelogOverlay) return;
+    changelogOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  if (changelogLink) {
+    changelogLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      openChangelog();
+    });
+  }
+
+  if (changelogClose) {
+    changelogClose.addEventListener('click', closeChangelog);
+  }
+
+  if (changelogOverlay) {
+    changelogOverlay.addEventListener('click', (e) => {
+      if (e.target === changelogOverlay) {
+        closeChangelog();
+      }
     });
   }
 
