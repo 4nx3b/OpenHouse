@@ -1479,7 +1479,8 @@
     events.sort((a, b) => (a.t || '') < (b.t || '') ? 1 : -1);
 
     if(!events.length){
-      pane.innerHTML = '<p class="log-empty">No activity yet.</p>';
+      if (appsPane) appsPane.innerHTML = '<p class="log-empty">No activity yet.</p>';
+      if (sitePane) sitePane.innerHTML = '<p class="log-empty">No activity yet.</p>'; 
       return;
     }
 
