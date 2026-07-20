@@ -934,7 +934,7 @@ a {
 
 
 /* ========== FIX 1 v3: Search bar popup - small centered, no full-screen, fix cut off ========== */
-.palette-input-row input{
+.palette-input-container input{
   min-width: 0;
   flex: 1;
 }
@@ -970,11 +970,11 @@ a {
     gap: 10px !important;
     flex-shrink: 0 !important;
   }
-  .palette-input-row input{
+  .palette-input-container input{
     font-size: 16px !important; /* prevent iOS zoom */
     min-width: 0 !important;
   }
-  .palette-input-row kbd{
+  .palette-input-container kbd{
     flex-shrink: 0 !important;
   }
   /* Hide categories/results list by default - only show when typing */
@@ -1038,11 +1038,11 @@ a {
   background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent) !important;
   border-bottom: 1px solid rgba(255,255,255,0.06) !important;
 }
-.palette-input-row svg{
+.palette-input-container svg{
   color: var(--text-faint) !important;
   flex-shrink: 0 !important;
 }
-.palette-input-row input{
+.palette-input-container input{
   flex: 1 !important;
   background: rgba(255,255,255,0.05) !important;
   border: 1px solid rgba(255,255,255,0.08) !important;
@@ -1053,15 +1053,15 @@ a {
   color: var(--text) !important;
   transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
 }
-.palette-input-row input:focus{
+.palette-input-container input:focus{
   background: rgba(255,255,255,0.08) !important;
   border-color: rgba(255,180,84,0.32) !important;
   box-shadow: 0 0 0 3px rgba(255,180,84,0.14) !important;
 }
-.palette-input-row input::placeholder{
+.palette-input-container input::placeholder{
   color: var(--text-faint) !important;
 }
-.palette-input-row kbd{
+.palette-input-container kbd{
   background: rgba(255,255,255,0.08) !important;
   border: 1px solid rgba(255,255,255,0.10) !important;
   border-radius: 8px !important;
@@ -1177,28 +1177,30 @@ a {
   width: 100%;
 }
 
-.palette-input-row{
-  position: relative;
+.palette-input-container {
+  position: relative !important;
+  width: 100% !important;
+  display: flex !important;
+  align-items: center !important;
 }
 
-.palette-input-row svg{
-  position: absolute;
-  left: 36px;
-  top: 50%;
-  transform: translateY(calc(-50% + 14px));
+.palette-input-container svg {
+  position: absolute !important;
+  left: 14px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   color: var(--text-faint) !important;
-  pointer-events: none;
-  z-index: 2;
+  pointer-events: none !important;
+  z-index: 2 !important;
 }
 
-.palette-input-row input{
+.palette-input-container input {
   width: 100% !important;
   height: 48px !important;
-  background: rgba(255,255,255,0.06) !important;
   background: rgba(18,18,22,0.9) !important;
   border: 1px solid rgba(255,255,255,0.10) !important;
   border-radius: 14px !important;
-  padding: 0 16px 0 44px !important;
+  padding: 0 54px 0 40px !important;
   font-size: 15px !important;
   font-weight: 500 !important;
   letter-spacing: -0.01em !important;
@@ -1209,23 +1211,23 @@ a {
   transition: all 0.2s ease !important;
 }
 
-.palette-input-row input::placeholder{
+.palette-input-container input::placeholder {
   color: var(--text-faint) !important;
   font-weight: 400 !important;
 }
 
-.palette-input-row input:focus{
+.palette-input-container input:focus {
   background: rgba(255,255,255,0.09) !important;
   border-color: rgba(255,180,84,0.32) !important;
   box-shadow: 0 0 0 3px rgba(255,180,84,0.12), inset 0 1px 0 rgba(255,255,255,0.08) !important;
   outline: none !important;
 }
 
-.palette-input-row kbd{
+.palette-input-container kbd {
   position: absolute !important;
-  right: 28px !important;
+  right: 12px !important;
   top: 50% !important;
-  transform: translateY(calc(-50% + 14px)) !important;
+  transform: translateY(-50%) !important;
   background: rgba(255,255,255,0.08) !important;
   border: 1px solid rgba(255,255,255,0.12) !important;
   border-bottom-width: 2px !important;
@@ -1235,6 +1237,13 @@ a {
   font-weight: 600 !important;
   color: var(--text-dim) !important;
   box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 640px) {
+  .palette-input-container input {
+    font-size: 16px !important; /* prevent iOS zoom */
+  }
 }
 
 /* Results list modern */
