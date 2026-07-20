@@ -1005,3 +1005,121 @@ a {
 }
 .palette-results::-webkit-scrollbar{ display:none; }
 
+
+
+/* ========== FIX: Auto-scroll should NOT outline app at all ========== */
+.cat-app.located{
+  border-color: var(--panel-border) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  animation: none !important;
+}
+.cat-app.located::after{
+  display: none !important;
+}
+.cat-app{
+  /* ensure no outline flash */
+  outline: none !important;
+}
+
+/* ========== Modern Search Bar ========== */
+.palette{
+  background: rgba(18,18,22,0.88) !important;
+  backdrop-filter: blur(20px) saturate(1.2) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(1.2) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 64px -24px rgba(0,0,0,0.85), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  overflow: hidden !important;
+}
+.palette-input-row{
+  padding: 18px 20px !important;
+  gap: 12px !important;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), transparent) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+}
+.palette-input-row svg{
+  color: var(--text-faint) !important;
+  flex-shrink: 0 !important;
+}
+.palette-input-row input{
+  flex: 1 !important;
+  background: rgba(255,255,255,0.05) !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  font-size: 15px !important;
+  font-weight: 500 !important;
+  color: var(--text) !important;
+  transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease !important;
+}
+.palette-input-row input:focus{
+  background: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,180,84,0.32) !important;
+  box-shadow: 0 0 0 3px rgba(255,180,84,0.14) !important;
+}
+.palette-input-row input::placeholder{
+  color: var(--text-faint) !important;
+}
+.palette-input-row kbd{
+  background: rgba(255,255,255,0.08) !important;
+  border: 1px solid rgba(255,255,255,0.10) !important;
+  border-radius: 8px !important;
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: var(--text-dim) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,0.06) inset !important;
+}
+
+/* ========== Dock Fluid Indicator - smooth switch animation ========== */
+.dock{
+  position: fixed !important;
+  /* keep existing styles but ensure indicator container */
+}
+.dock-indicator{
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255,180,84,0.14);
+  border: 1px solid rgba(255,180,84,0.22);
+  box-shadow: 0 4px 16px -8px rgba(255,180,84,0.5), inset 0 1px 0 rgba(255,255,255,0.08);
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  transform: translateX(0) scale(0.8);
+  transition: transform 0.5s cubic-bezier(.22, 1.4, .36, 1), opacity 0.3s ease, width 0.4s ease, height 0.4s ease, background 0.3s ease;
+  will-change: transform, opacity;
+}
+.dock a{
+  position: relative;
+  z-index: 1;
+}
+.dock a.active{
+  background: transparent !important; /* indicator provides background */
+  color: var(--accent) !important;
+}
+.dock a.active svg *{
+  stroke: var(--accent) !important;
+}
+
+
+/* ========== FIX: Lazy updated timestamp shifts card size */
+.cat-updated{
+  display: block;
+  min-height: 14px;
+  font-size: 11px;
+  line-height: 1.2;
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  margin-top: 6px;
+}
+.cat-updated[hidden]{
+  display: block !important;
+  visibility: hidden !important;
+  min-height: 14px !important;
+}
+.cat-app-body{
+  min-height: 0;
+}
