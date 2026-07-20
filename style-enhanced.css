@@ -750,23 +750,34 @@ a {
 #touch-crosshair {
   position: fixed;
   pointer-events: none;
-  width: 24px;
-  height: 24px;
-  border: 2px solid var(--accent);
-  border-radius: 2px;
+  width: 20px;
+  height: 20px;
+  background: var(--accent);
+  border-radius: 50%;
   opacity: 0;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  box-shadow: 0 0 12px rgba(255, 180, 84, 0.4);
+  transition: opacity 0.1s ease, transform 0.1s ease;
+  box-shadow: 0 0 10px rgba(255, 180, 84, 0.6);
 }
 
-#touch-crosshair svg {
+#touch-crosshair::before,
+#touch-crosshair::after {
+  content: '';
   position: absolute;
   top: 50%;
   left: 50%;
+  background: var(--accent);
   transform: translate(-50%, -50%);
-  width: 10px;
-  height: 10px;
-  fill: var(--accent);
+  transition: opacity 0.1s ease;
+}
+
+#touch-crosshair::before {
+  width: 2px;
+  height: 12px;
+}
+
+#touch-crosshair::after {
+  width: 12px;
+  height: 2px;
 }
