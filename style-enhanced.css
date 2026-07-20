@@ -315,9 +315,11 @@
   width: 44px;
   height: 44px;
   border-radius: 12px;
-  background: transparent;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   color: var(--text);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
@@ -344,7 +346,7 @@
 }
 
 .back-to-top:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.08);
   border-color: var(--accent);
 }
 
@@ -353,7 +355,7 @@
 }
 
 .back-to-top:active {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   transform: scale(0.95);
 }
 
@@ -570,17 +572,14 @@ a {
   display: flex;
   gap: 0.5rem;
   margin: 1rem 0;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.05);
-  padding: 0.25rem;
 }
 
 .changelog-tab {
   padding: 0.5rem 1.25rem;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.15);
   background: transparent;
   color: var(--text-dim);
-  border-radius: 16px;
+  border-radius: 20px;
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.875rem;
@@ -588,11 +587,13 @@ a {
 }
 
 .changelog-tab:hover {
+  border-color: var(--accent);
   color: var(--text);
 }
 
 .changelog-tab.active {
   background: var(--accent);
+  border-color: var(--accent);
   color: #0a0a0a;
 }
 
