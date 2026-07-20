@@ -544,6 +544,9 @@
   let lastSoundTs = 0;
 
   function handleInteraction(e){
+    // Explicitly block crosshair on navigation dock
+    if (e.target.closest('#dock')) return;
+
     // still show crosshair for all interactive (visual feedback)
     const t=e.target.closest(interactiveSel);
     if(t){
