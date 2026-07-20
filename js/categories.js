@@ -407,35 +407,29 @@
 
   function bindCards(){
     if(!isTouch){
-      // rAF-throttled tilt: layout is read once per hover, painted once per frame
+      // rAF-throttled cursor glow: layout is read once per hover, painted once per frame.
+      // NOTE: this used to also apply a perspective/rotateX/rotateY/translateZ "tilt"
+      // transform, but that 3D transform could push the card's rendered box past the
+      // popup's clipped (rounded-corner) edge on any hover — not just near the ⋮
+      // button — making the card look like it "grew" and got cut off at the side.
+      // Only the cursor-follow glow (via --mx/--my) is applied now; it never moves
+      // the card's box, so it can't clip.
       $$('.cat-app', listEl).forEach(card => {
         let rect = null, raf = null, pending = null;
-        card.addEventListener('mouseenter', () => {
-          if(card.dataset.menuOpen === '1') return; // don't tilt while its menu is open
-          rect = card.getBoundingClientRect();
-        });
+        card.addEventListener('mouseenter', () => { rect = card.getBoundingClientRect(); });
         card.addEventListener('mousemove', e => {
-          // The ⋮ button sits right in the card's corner; a click/hover there
-          // sits at an extreme edge of the card, which drove an extreme tilt
-          // that visually grows the card and clips it against the popup edge.
-          // Skip the tilt entirely while this card's menu is open.
-          if(card.dataset.menuOpen === '1') return;
           pending = e;
           if(raf) return;
           raf = requestAnimationFrame(() => {
             raf = null;
-            if(!pending || !rect || card.dataset.menuOpen === '1') return;
+            if(!pending || !rect) return;
             const px = (pending.clientX - rect.left) / rect.width;
             const py = (pending.clientY - rect.top) / rect.height;
-            if(!reduced){
-              card.style.transform =
-                `perspective(700px) rotateX(${(0.5 - py) * 8}deg) rotateY(${(px - 0.5) * 8}deg) translateZ(4px)`;
-            }
             card.style.setProperty('--mx', (px * 100) + '%');
             card.style.setProperty('--my', (py * 100) + '%');
           });
         });
-        card.addEventListener('mouseleave', () => { rect = null; card.style.transform = ''; });
+        card.addEventListener('mouseleave', () => { rect = null; });
       });
     }
     $$('.cat-app', listEl).forEach(card => {
