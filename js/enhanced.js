@@ -312,6 +312,7 @@
   // ===== 15. TAP SOUNDS & CROSSHAIR FOR TOUCH DEVICES =====
   let tapAudioContext = null;
   let audioUnlocked = false;
+  let audioInitialized = false;
   let lastTapTime = 0;
   const TAP_DEBOUNCE = 100;
 
@@ -319,6 +320,13 @@
   const crosshair = document.createElement('div');
   crosshair.id = 'touch-crosshair';
   document.body.appendChild(crosshair);
+
+  // Create audio element as fallback
+  const tapAudio = document.createElement('audio');
+  tapAudio.id = 'tap-sound';
+  tapAudio.src = 'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleQAA';
+  tapAudio.volume = 0.5;
+  document.body.appendChild(tapAudio);
 
   function showCrosshair(x, y) {
     const c = $('#touch-crosshair');
@@ -334,16 +342,16 @@
   function unlockAudio() {
     if (audioUnlocked) return;
     audioUnlocked = true;
+    audioInitialized = true;
     try {
       tapAudioContext = new (window.AudioContext || window.webkitAudioContext)();
-      // Create and play silent buffer to unlock
       const buffer = tapAudioContext.createBuffer(1, 1, 22050);
       const source = tapAudioContext.createBufferSource();
       source.buffer = buffer;
       source.connect(tapAudioContext.destination);
       source.start(0);
     } catch (e) {
-      console.log('Audio init:', e);
+      console.log('Web Audio not available, using audio element');
     }
   }
 
@@ -352,14 +360,30 @@
     if (now - lastTapTime < TAP_DEBOUNCE) return;
     lastTapTime = now;
 
+    // Try audio element first (more reliable on mobile)
+    try {
+      const audioEl = $('#tap-sound');
+      if (audioEl) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+      }
+    } catch (e) {}
+
+    // Also try Web Audio API
     if (!audioUnlocked) {
       unlockAudio();
-      // Retry after unlock
-      setTimeout(playTapSound, 30);
-      return;
     }
 
-    if (!tapAudioContext) return;
+    if (!audioUnlocked || !tapAudioContext) {
+      setTimeout(() => {
+        const audioEl = $('#tap-sound');
+        if (audioEl) {
+          audioEl.currentTime = 0;
+          audioEl.play().catch(() => {});
+        }
+      }, 30);
+      return;
+    }
 
     try {
       const oscillator = tapAudioContext.createOscillator();
@@ -378,7 +402,12 @@
       
       gainNode.gain.exponentialRampToValueAtTime(0.0001, tapAudioContext.currentTime + 0.05);
     } catch (e) {
-      console.log('Sound error:', e);
+      console.log('Web Audio error, trying audio element');
+      const audioEl = $('#tap-sound');
+      if (audioEl) {
+        audioEl.currentTime = 0;
+        audioEl.play().catch(() => {});
+      }
     }
   }
 
@@ -390,7 +419,6 @@
     const x = e.touches ? e.touches[0].clientX : e.clientX;
     const y = e.touches ? e.touches[0].clientY : e.clientY;
 
-    // Interactive elements selector
     const interactive = 'button, a, [data-cursor], .cat-pill, .feature-card, .download-card, .cat-app, .dock a, .dock button, .modal-close, .changelog-tab, .palette-trigger, .icon-btn, .admin-menu-item, .btn, .btn-primary, .btn-outline, .brand, .footer-col a';
     const target = e.target.closest(interactive);
     
