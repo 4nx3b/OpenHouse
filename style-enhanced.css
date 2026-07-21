@@ -1451,12 +1451,12 @@ a {
 #cat-grid .cat-pill .cat-sub {
   display: none !important;
 }
-#cat-grid .cat-meta-rows { display: grid; gap: 7px; }
-#cat-grid .cat-meta-row { display: grid; grid-template-columns: auto minmax(18px, 1fr) auto; align-items: center; gap: 9px; color: #aaaab0; font-size: 12.5px; line-height: 1; }
-#cat-grid .cat-meta-label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-#cat-grid .cat-meta-label b { width: 13px; color: #a8a8ad; font-size: 13px; font-weight: 400; text-align: center; }
-#cat-grid .cat-meta-row i { height: 1px; background: rgba(255,255,255,.14); }
-#cat-grid .cat-meta-row strong { color: #e3e3e5; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
+#cat-grid .cat-meta-rows { display: grid; gap: 7px; min-width: 0; }
+#cat-grid .cat-meta-row { display: grid; grid-template-columns: minmax(0,auto) minmax(6px, 1fr) minmax(0,auto); align-items: center; gap: 6px; color: #aaaab0; font-size: 12.5px; line-height: 1; min-width: 0; }
+#cat-grid .cat-meta-label { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cat-grid .cat-meta-label b { width: 13px; color: #a8a8ad; font-size: 13px; font-weight: 400; text-align: center; flex-shrink: 0; }
+#cat-grid .cat-meta-row i { height: 1px; background: rgba(255,255,255,.14); min-width: 0; }
+#cat-grid .cat-meta-row strong { color: #e3e3e5; font-size: 12.5px; font-weight: 500; white-space: nowrap; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 #cat-grid .cat-pill .cat-count { display: none !important; }
 #cat-grid .cat-pill-featured { grid-column: auto !important; min-height: 120px !important; background: #101011 !important; animation: none !important; }
@@ -1468,6 +1468,10 @@ a {
   #cat-grid.cat-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 10px !important; padding: 0 14px !important; }
   #cat-grid .cat-pill { min-height: 108px !important; padding: 15px 14px 14px !important; }
   #cat-grid .cat-pill .cat-name { font-size: 15px !important; }
+  #cat-grid .cat-meta-row { grid-template-columns: minmax(0,auto) minmax(4px, 1fr) minmax(0,auto) !important; gap: 4px !important; font-size: 11px !important; }
+  #cat-grid .cat-meta-label { gap: 4px !important; }
+  #cat-grid .cat-meta-label b { width: 11px !important; font-size: 11px !important; }
+  #cat-grid .cat-meta-row strong { font-size: 11px !important; }
 }
 
 /* The grid container must never sit at opacity 0. The old reveal-on-scroll
