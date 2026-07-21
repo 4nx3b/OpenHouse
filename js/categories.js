@@ -653,17 +653,17 @@
     function centerCard(card){
       const list = listEl;
       if(!list || !card) return;
-      try{
-        const cardTop = card.offsetTop;
-        const listH = list.clientHeight;
-        const cardH = card.offsetHeight;
-        let targetTop = cardTop - (listH/2 - cardH/2);
-        const maxScroll = list.scrollHeight - listH;
-        targetTop = Math.max(0, Math.min(targetTop, maxScroll));
-        list.scrollTo({ top: targetTop, behavior: 'smooth' });
-      }catch(e){
-        try{ card.scrollIntoView({ behavior:'smooth', block:'center' }); }catch(_){}
-      }
+      
+      // Ensure we are calculating relative to the scroll container
+      const cardTop = card.offsetTop;
+      const listH = list.clientHeight;
+      const cardH = card.offsetHeight;
+      
+      let targetTop = cardTop - (listH / 2 - cardH / 2);
+      const maxScroll = list.scrollHeight - listH;
+      targetTop = Math.max(0, Math.min(targetTop, maxScroll));
+      
+      list.scrollTo({ top: targetTop, behavior: 'smooth' });
     }
 
     function attempt(){
@@ -687,15 +687,18 @@
         }
         return;
       }
-      if(list.scrollHeight <= list.clientHeight && tries < MAX_TRIES){
+      
+      // Wait for the list to be actually rendered and have height
+      if(list.clientHeight === 0 && tries < MAX_TRIES){
         tries++;
         setTimeout(attempt, 100);
         return;
       }
+
       requestAnimationFrame(()=>{
         requestAnimationFrame(()=>{
-          try{ card.style.animation = 'none'; }catch(e){}
           centerCard(card);
+          // ... rest of the logic for ResizeObserver
           // No outline per user request - do NOT add located class
           // Re-center if lazy-loaded updated timestamp increases card size
           observedCard = card;
@@ -1512,6 +1515,10 @@
     const obs = new MutationObserver(() => {
       const anyOpen = $$('.modal-overlay.open').length > 0;
       document.body.classList.toggle('modal-open', anyOpen);
+      if(window.lenis){
+        if(anyOpen) window.lenis.stop();
+        else window.lenis.start();
+      }
     });
     overlays.forEach(o => obs.observe(o, { attributes: true, attributeFilter: ['class'] }));
   }
