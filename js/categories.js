@@ -150,7 +150,9 @@
   /* ---------------- LOAD FROM DATABASE ---------------- */
   async function loadFromDB(){
     if(!DB.ready) return;
-    renderSkeletonGrid();
+    // Keep the already-rendered directory on screen while the shared data
+    // refreshes. Skeleton cards were visually blank in the full-card layout
+    // and could leave the page looking empty on slow mobile connections.
     try {
       // A stalled database request should fall back to the directory rather
       // than leaving the grid as blank skeleton cards indefinitely.
