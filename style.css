@@ -460,7 +460,11 @@ kbd{
 }
 
 /* ================= OWNER / ADMIN ================= */
-/* lock background interaction whenever any modal/popup is open */
+/* lock background interaction whenever any modal/popup is open.
+   html is the actual scrolling element (standards mode), so it must be
+   locked too — locking body alone left the page behind the popup free
+   to scroll on desktop. */
+html.modal-open{ overflow:hidden; }
 body.modal-open{ pointer-events:none; overflow:hidden; }
 
 /* Desktop-only: lock background scroll when category modal is open */
@@ -470,6 +474,9 @@ body.modal-open{ pointer-events:none; overflow:hidden; }
   }
 }
 .modal-overlay{ pointer-events:auto; }
+/* Elements flagged with data-lenis-prevent (popup scroll lists) must keep
+   native scrolling/pointer interaction even while the body is locked. */
+[data-lenis-prevent]{ overscroll-behavior:contain; }
 .toast-stack{ z-index:210; }
 
 /* stop long app names/descriptions from being clipped in cards */
