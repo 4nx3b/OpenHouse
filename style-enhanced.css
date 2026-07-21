@@ -1479,6 +1479,19 @@ a {
   #cat-grid .cat-pill .cat-sub { font-size: 16px !important; }
 }
 
+/* The grid container must never sit at opacity 0. The old reveal-on-scroll
+   system (.reveal-up) could leave it permanently transparent on mobile:
+   its IntersectionObserver threshold was never reached for an element this
+   tall, so `.in` was never added and every card stayed invisible (but
+   clickable). Force the container visible regardless of reveal classes. */
+#cat-grid.cat-grid,
+#cat-grid.cat-grid.reveal-up {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: none !important;
+  filter: none !important;
+}
+
 /* The full card layout must not inherit the old pill entrance animation.
    Its `both` fill mode can retain an opacity of zero on mobile browsers. */
 #cat-grid .cat-pill:not(.skel),
