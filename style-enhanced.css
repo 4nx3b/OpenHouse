@@ -1460,6 +1460,28 @@ a {
 
 #cat-grid .cat-pill .cat-count { display: none !important; }
 
+/* ---- Edit / delete buttons: pull out of flex flow entirely ----
+   Previously these two spans were plain flex items inside #cat-grid
+   .cat-pill's column layout, so they stacked as their own row right under
+   the meta rows with zero gap — cramped against (and often clipped by)
+   the card's rounded bottom edge/overflow:hidden. On the Featured card
+   the layout switches to flex-direction:row + flex-wrap:wrap, which could
+   push them onto a wrapped second line that got clipped away entirely,
+   making them invisible. Taking them out of flow and anchoring them to a
+   fixed corner fixes both at once, on every card variant. */
+#cat-grid .cat-pill .cat-act {
+  position: absolute !important;
+  bottom: 12px !important;
+  margin: 0 !important;
+  z-index: 4 !important;
+}
+#cat-grid .cat-pill .cat-act-icon { right: 46px !important; }
+#cat-grid .cat-pill .cat-act-del  { right: 12px !important; }
+/* Reserve room at the bottom of the card so the buttons never sit on top
+   of the last meta row's text. Only applies when the buttons exist
+   (i.e. the owner/admin is signed in). */
+#cat-grid .cat-pill:has(.cat-act) { padding-bottom: 46px !important; }
+
 /* ---- Featured card: visually separated from normal category cards ---- */
 #cat-grid .cat-pill-featured {
   grid-column: 1 / -1 !important;
