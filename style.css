@@ -393,6 +393,7 @@ kbd{
 
 
 .cat-app-list{
+  position: relative;
   overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
   scrollbar-width:none; -ms-overflow-style:none;
   margin-top:12px; display:grid; grid-template-columns:1fr 1fr;
@@ -464,14 +465,7 @@ body.modal-open{ pointer-events:none; overflow:hidden; }
 
 /* Desktop-only: lock background scroll when category modal is open */
 @media (hover:hover) {
-  body.modal-open .cat-overlay.open ~ main,
-  body.modal-open #cat-overlay.open ~ main {
-    overflow: hidden;
-  }
-  #cat-overlay.open {
-    overflow: hidden;
-  }
-  #cat-overlay.open .cat-modal {
+  body.modal-open main {
     overflow: hidden;
   }
 }

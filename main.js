@@ -173,6 +173,7 @@
   let lenis;
   if(typeof Lenis !== 'undefined' && !reduced && !isTouch){
     lenis = new Lenis({ duration: 1.1, smoothWheel: true });
+    window.lenis = lenis;
     lenis.on('scroll', updateProgress);
     if(hasGsap){
       lenis.on('scroll', ScrollTrigger.update);
