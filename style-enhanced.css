@@ -1395,8 +1395,8 @@ a {
 #cat-grid.cat-grid {
   display: grid !important;
   grid-template-columns: 1fr !important;
-  gap: 34px !important;
-  max-width: 620px !important;
+  gap: 18px !important;
+  max-width: 480px !important;
   padding: 0 16px !important;
 }
 
@@ -1404,8 +1404,8 @@ a {
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
-  min-height: 306px !important;
-  padding: 34px 34px 30px !important;
+  min-height: 176px !important;
+  padding: 20px 20px 18px !important;
   overflow: hidden !important;
   border: 1px solid rgba(255,255,255,.14) !important;
   border-radius: 14px !important;
@@ -1424,59 +1424,59 @@ a {
 
 #cat-grid .cat-pill .cat-ico {
   display: inline-flex !important;
-  width: 52px !important;
-  height: 52px !important;
-  min-width: 52px !important;
-  margin: 0 14px 18px 0 !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  margin: 0 10px 10px 0 !important;
   vertical-align: middle !important;
   border: 0 !important;
-  border-radius: 11px !important;
+  border-radius: 9px !important;
   background: rgba(255,255,255,.035) !important;
   color: var(--accent) !important;
-  font-size: 25px !important;
+  font-size: 16px !important;
   box-shadow: none !important;
 }
-#cat-grid .cat-pill .cat-ico .cat-auto-icon { width: 38px; height: 38px; }
+#cat-grid .cat-pill .cat-ico .cat-auto-icon { width: 25px; height: 25px; }
 #cat-grid .cat-ico .cat-auto-icon text { font-size: 4px; }
 
 #cat-grid .cat-pill-body { display: block !important; }
 #cat-grid .cat-pill .cat-name {
   display: inline !important;
   color: #eeeeef !important;
-  font-size: 29px !important;
+  font-size: 18px !important;
   font-weight: 600 !important;
-  line-height: 52px !important;
+  line-height: 34px !important;
   vertical-align: middle !important;
 }
 #cat-grid .cat-pill .cat-sub {
   display: block !important;
-  min-height: 52px;
-  margin: 14px 0 20px !important;
+  min-height: 34px;
+  margin: 9px 0 12px !important;
   color: #b7b7bb !important;
-  font-size: 17px !important;
+  font-size: 13px !important;
   font-weight: 400 !important;
   line-height: 1.45 !important;
   overflow-wrap: anywhere !important;
   word-break: break-word !important;
 }
-#cat-grid .cat-meta-rows { display: grid; gap: 11px; }
-#cat-grid .cat-meta-row { display: grid; grid-template-columns: auto minmax(18px, 1fr) auto; align-items: center; gap: 13px; color: #aaaab0; font-size: 15px; line-height: 1; }
-#cat-grid .cat-meta-label { display: flex; align-items: center; gap: 9px; white-space: nowrap; }
-#cat-grid .cat-meta-label b { width: 17px; color: #a8a8ad; font-size: 17px; font-weight: 400; text-align: center; }
+#cat-grid .cat-meta-rows { display: grid; gap: 7px; }
+#cat-grid .cat-meta-row { display: grid; grid-template-columns: auto minmax(18px, 1fr) auto; align-items: center; gap: 9px; color: #aaaab0; font-size: 12.5px; line-height: 1; }
+#cat-grid .cat-meta-label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+#cat-grid .cat-meta-label b { width: 13px; color: #a8a8ad; font-size: 13px; font-weight: 400; text-align: center; }
 #cat-grid .cat-meta-row i { height: 1px; background: rgba(255,255,255,.14); }
-#cat-grid .cat-meta-row strong { color: #e3e3e5; font-size: 15px; font-weight: 500; white-space: nowrap; }
+#cat-grid .cat-meta-row strong { color: #e3e3e5; font-size: 12.5px; font-weight: 500; white-space: nowrap; }
 
 #cat-grid .cat-pill .cat-count { display: none !important; }
-#cat-grid .cat-pill-featured { grid-column: auto !important; min-height: 306px !important; background: #101011 !important; animation: none !important; }
+#cat-grid .cat-pill-featured { grid-column: auto !important; min-height: 176px !important; background: #101011 !important; animation: none !important; }
 #cat-grid .cat-pill-featured::before { display: none !important; }
-#cat-grid .cat-pill-featured .cat-ico { width: 52px !important; height: 52px !important; min-width: 52px !important; background: rgba(255,255,255,.035) !important; color: var(--accent) !important; }
-#cat-grid .cat-pill-featured .cat-name { color: #eeeeef !important; font-size: 29px !important; }
+#cat-grid .cat-pill-featured .cat-ico { width: 34px !important; height: 34px !important; min-width: 34px !important; background: rgba(255,255,255,.035) !important; color: var(--accent) !important; }
+#cat-grid .cat-pill-featured .cat-name { color: #eeeeef !important; font-size: 18px !important; }
 
 @media (max-width: 480px) {
-  #cat-grid.cat-grid { gap: 20px !important; padding: 0 14px !important; }
-  #cat-grid .cat-pill { min-height: 285px !important; padding: 27px 28px 26px !important; }
-  #cat-grid .cat-pill .cat-name { font-size: 27px !important; }
-  #cat-grid .cat-pill .cat-sub { font-size: 16px !important; }
+  #cat-grid.cat-grid { gap: 12px !important; padding: 0 14px !important; }
+  #cat-grid .cat-pill { min-height: 160px !important; padding: 16px 18px 15px !important; }
+  #cat-grid .cat-pill .cat-name { font-size: 16px !important; }
+  #cat-grid .cat-pill .cat-sub { font-size: 12.5px !important; }
 }
 
 /* The grid container must never sit at opacity 0. The old reveal-on-scroll
