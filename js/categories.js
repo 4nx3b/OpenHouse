@@ -232,7 +232,9 @@
         ? `<span class="cat-act cat-act-icon" role="button" tabindex="0" data-act="icon" title="Change icon" aria-label="Change icon for ${esc(cat)}">✎</span>
            <span class="cat-act cat-act-del" role="button" tabindex="0" data-act="del" title="Delete category" aria-label="Delete ${esc(cat)} category">✕</span>`
         : '';
-      return `<button class="cat-pill" data-cat="${esc(cat)}" data-cursor="pointer" aria-label="Open ${esc(cat)} category" style="--i:${idx};display:block!important;opacity:1!important;visibility:visible!important;color:#eeeeef!important">
+      const isFeatured = cat === 'Featured';
+      return `<button class="cat-pill${isFeatured ? ' cat-pill-featured' : ''}" data-cat="${esc(cat)}" data-cursor="pointer" aria-label="Open ${esc(cat)} category" style="--i:${idx};display:block!important;opacity:1!important;visibility:visible!important;color:#eeeeef!important">
+        ${isFeatured ? '<span class="cat-featured-badge" aria-hidden="true">★ Top pick</span>' : ''}
         <span class="cat-ico">${categoryIconHTML(cat)}</span>
         <span class="cat-pill-body">
           <span class="cat-name">${esc(cat)}</span>
