@@ -141,6 +141,12 @@
         card.style.transition = 'transform 80ms cubic-bezier(0.23, 1, 0.32, 1)';
         card.style.transform = `perspective(900px) rotateX(${rotX}deg) rotateY(${rotY}deg) translateZ(${lift}px)`;
 
+        // Depth shadow that shifts opposite the raised edge, selling the 3D lift
+        const shadowX = -rotY * 1.1;
+        const shadowY = 10 - rotX * 0.6;
+        const shadowBlur = 24 + Math.abs(lift) * 0.9;
+        card.style.boxShadow = `${shadowX.toFixed(1)}px ${shadowY.toFixed(1)}px ${shadowBlur.toFixed(1)}px rgba(0,0,0,.34)`;
+
         // Only update glow during hover, not during active tilt
         if (!card.classList.contains('tilting')) {
           card.style.setProperty('--mx', (px * 100) + '%');
@@ -152,6 +158,7 @@
         if (raf) cancelAnimationFrame(raf);
         card.style.transition = 'transform 420ms cubic-bezier(0.23, 1, 0.32, 1)';
         card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg) translateZ(0)';
+        card.style.boxShadow = '';
         card.classList.remove('tilting');
       };
 
@@ -169,6 +176,7 @@
         if (isScrolling) return;
         rect = card.getBoundingClientRect();
         card.classList.add('tilting');
+        if (navigator.vibrate) navigator.vibrate(8);
         applyTilt(e.touches[0].clientX, e.touches[0].clientY);
       };
 
@@ -600,6 +608,149 @@
     });
   }, {passive:true});
 
+
+  // ===== 16. MOTION BLUR WHILE SCROLLING INSIDE POPUPS =====
+  // scroll doesn't bubble, so we listen on the capture phase at the document
+  // level and check whether the event originated inside an open modal.
+  if (!reduced) {
+    const blurState = new WeakMap();
+    const MAX_BLUR = 5; // px, kept modest so text stays legible mid-scroll
+
+    document.addEventListener('scroll', (e) => {
+      const target = e.target;
+      if (!target || target === document) return;
+      const overlay = (target.nodeType === 1) ? target.closest('.modal-overlay.open') : null;
+      if (!overlay) return;
+
+      const scroller = target.nodeType === 1 ? target : null;
+      if (!scroller) return;
+
+      let state = blurState.get(scroller);
+      const now = performance.now();
+      const top = scroller.scrollTop;
+      if (!state) {
+        state = { lastTop: top, lastTime: now, timer: null };
+        blurState.set(scroller, state);
+      }
+
+      const dt = Math.max(now - state.lastTime, 1);
+      const dy = top - state.lastTop;
+      const velocity = Math.abs(dy / dt); // px per ms
+      const blurAmt = Math.min(velocity * 16, MAX_BLUR);
+
+      scroller.style.transition = 'filter 0ms linear';
+      scroller.style.filter = blurAmt > 0.2 ? `blur(${blurAmt.toFixed(2)}px)` : '';
+      scroller.style.willChange = 'filter';
+
+      state.lastTop = top;
+      state.lastTime = now;
+
+      clearTimeout(state.timer);
+      state.timer = setTimeout(() => {
+        scroller.style.transition = 'filter 240ms ease-out';
+        scroller.style.filter = '';
+      }, 100);
+    }, { capture: true, passive: true });
+  }
+
+  // ===== 17. SMOOTH INERTIA SCROLLING (Lenis) =====
+  // Only initializes if nothing else in the page has already set up Lenis,
+  // so this stays additive and won't create a competing scroll instance.
+  if (!reduced && typeof Lenis !== 'undefined' && !window.OpenhouseLenis) {
+    try {
+      const lenis = new Lenis({
+        duration: 1.15,
+        easing: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        smoothTouch: false, // keep native touch feel on mobile; inertia is for wheel/trackpad
+        wheelMultiplier: 1,
+        touchMultiplier: 1.5
+      });
+      window.OpenhouseLenis = lenis;
+
+      if (typeof gsap !== 'undefined' && gsap.ticker) {
+        gsap.ticker.add((time) => lenis.raf(time * 1000));
+        gsap.ticker.lagSmoothing(0);
+        if (typeof ScrollTrigger !== 'undefined') {
+          lenis.on('scroll', ScrollTrigger.update);
+        }
+      } else {
+        const lenisRaf = (time) => {
+          lenis.raf(time);
+          requestAnimationFrame(lenisRaf);
+        };
+        requestAnimationFrame(lenisRaf);
+      }
+    } catch (e) { console.warn('Lenis init failed', e); }
+  }
+
+  // ===== 18. SOFT VIBRATION ON POPUP OPEN (where supported) =====
+  if ('vibrate' in navigator) {
+    $$('.modal-overlay').forEach(overlay => {
+      const mo = new MutationObserver((muts) => {
+        muts.forEach(m => {
+          if (m.attributeName === 'class' && overlay.classList.contains('open')) {
+            navigator.vibrate(10);
+          }
+        });
+      });
+      mo.observe(overlay, { attributes: true, attributeFilter: ['class'] });
+    });
+  }
+
+  // ===== 19. STRETCH / BOUNCE ON PULL (top & bottom rubber-band) =====
+  if (!reduced) {
+    const stretchEl = $('main#top') || document.body;
+    let pullStartY = 0;
+    let isPulling = false;
+    let boundary = null; // 'top' | 'bottom' | null
+
+    const scrollTop = () => window.scrollY || document.documentElement.scrollTop;
+    const maxScroll = () => document.documentElement.scrollHeight - window.innerHeight;
+
+    function onPullStart(e) {
+      if (e.touches.length !== 1) return;
+      pullStartY = e.touches[0].clientY;
+      const top = scrollTop();
+      if (top <= 0) boundary = 'top';
+      else if (top >= maxScroll() - 1) boundary = 'bottom';
+      else boundary = null;
+      isPulling = false;
+    }
+
+    function onPullMove(e) {
+      if (!boundary) return;
+      const dy = e.touches[0].clientY - pullStartY;
+      if (boundary === 'top' && dy > 0) {
+        isPulling = true;
+        const stretch = Math.min(dy * 0.35, 70);
+        stretchEl.style.transition = 'transform 0ms linear';
+        stretchEl.style.transformOrigin = 'top center';
+        stretchEl.style.transform = `translateY(${stretch}px) scaleY(${1 + stretch / 900})`;
+      } else if (boundary === 'bottom' && dy < 0) {
+        isPulling = true;
+        const stretch = Math.min(Math.abs(dy) * 0.35, 70);
+        stretchEl.style.transition = 'transform 0ms linear';
+        stretchEl.style.transformOrigin = 'bottom center';
+        stretchEl.style.transform = `translateY(-${stretch}px) scaleY(${1 + stretch / 900})`;
+      }
+    }
+
+    function onPullEnd() {
+      if (isPulling) {
+        stretchEl.style.transition = 'transform 480ms cubic-bezier(0.34, 1.56, 0.64, 1)';
+        stretchEl.style.transform = '';
+        if (navigator.vibrate) navigator.vibrate(6);
+      }
+      isPulling = false;
+      boundary = null;
+    }
+
+    document.addEventListener('touchstart', onPullStart, { passive: true });
+    document.addEventListener('touchmove', onPullMove, { passive: true });
+    document.addEventListener('touchend', onPullEnd, { passive: true });
+    document.addEventListener('touchcancel', onPullEnd, { passive: true });
+  }
 
   // ===== INITIALIZATION =====
   if (document.readyState === 'loading') {
