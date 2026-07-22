@@ -1688,33 +1688,6 @@ main#top {
   }
 }
 
-.dock a.active::before {
-  content: '';
-  position: absolute;
-  inset: -5px;
-  border-radius: 50%;
-  padding: 1.5px;
-  background: conic-gradient(
-    from 0deg,
-    var(--accent),
-    transparent 22%,
-    rgba(255, 180, 84, 0.55) 50%,
-    transparent 78%,
-    var(--accent)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  animation: dockRingSpin 5s linear infinite;
-  pointer-events: none;
-  opacity: 0.85;
-  z-index: 0;
-}
-
-@keyframes dockRingSpin {
-  to { transform: rotate(360deg); }
-}
-
 /* ============================================================
    20. TACTILE BUTTON INTERACTIONS
    ============================================================ */
@@ -1840,8 +1813,7 @@ main#top {
 
 @media (prefers-reduced-motion: reduce) {
   .dock a.active,
-  .dock a.active svg,
-  .dock a.active::before {
+  .dock a.active svg {
     animation: none !important;
   }
   .ambient-glow {
