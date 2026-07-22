@@ -712,53 +712,6 @@
     document.addEventListener('touchcancel', onPullEnd, { passive: true });
   }
 
-  // ===== 19. TACTILE BUTTON RIPPLE (mouse + touch) =====
-  if (!reduced) {
-    const RIPPLE_SELECTOR = '.btn, .btn-primary, .btn-outline';
-    document.addEventListener('pointerdown', (e) => {
-      const btn = e.target.closest(RIPPLE_SELECTOR);
-      if (!btn) return;
-      const rect = btn.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height) * 1.6;
-      const ripple = document.createElement('span');
-      ripple.className = 'btn-ripple';
-      ripple.style.width = size + 'px';
-      ripple.style.height = size + 'px';
-      ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
-      ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
-      btn.appendChild(ripple);
-      ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
-      // safety cleanup in case animationend doesn't fire (e.g. element removed)
-      setTimeout(() => ripple.remove(), 800);
-    }, { passive: true });
-  }
-
-  // ===== 20. AMBIENT BACKGROUND (moving glows + noise + vignette) =====
-  if (!$('#ambient-bg')) {
-    const glowWrap = document.createElement('div');
-    glowWrap.id = 'ambient-bg';
-    glowWrap.setAttribute('aria-hidden', 'true');
-    glowWrap.innerHTML =
-      '<div class="ambient-glow g1"></div>' +
-      '<div class="ambient-glow g2"></div>' +
-      '<div class="ambient-glow g3"></div>';
-
-    const noise = document.createElement('div');
-    noise.id = 'ambient-noise';
-    noise.setAttribute('aria-hidden', 'true');
-
-    const vignette = document.createElement('div');
-    vignette.id = 'ambient-vignette';
-    vignette.setAttribute('aria-hidden', 'true');
-
-    // Insert as the first elements in <body> so they sit behind everything
-    // (they're position:fixed with negative z-index regardless of DOM order,
-    // but keeping them first avoids ever interfering with layout/tab order).
-    document.body.insertBefore(vignette, document.body.firstChild);
-    document.body.insertBefore(noise, document.body.firstChild);
-    document.body.insertBefore(glowWrap, document.body.firstChild);
-  }
-
   // ===== INITIALIZATION =====
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
