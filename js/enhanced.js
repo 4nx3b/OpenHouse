@@ -874,28 +874,9 @@
     });
   }
 
-  // ===== EASTER EGG 7: Scroll to absolute bottom → surprise =====
-  let bottomReached = false;
-  window.addEventListener('scroll', () => {
-    if (bottomReached) return;
-    const scrolled = window.scrollY + window.innerHeight;
-    const total = document.documentElement.scrollHeight;
-    if (scrolled >= total - 5) {
-      bottomReached = true;
-      showEasterEggToast('🏆 You scrolled all the way down! Here\'s a cookie: 🍪');
-      spawnConfetti(30);
-    }
-  }, { passive: true });
+  // ===== EASTER EGG 7: (removed — below "Why Openhouse" section) =====
 
-  // ===== EASTER EGG 8: Double-click the footer credit =====
-  const creditLink = document.querySelector('.credit-link');
-  if (creditLink) {
-    creditLink.addEventListener('dblclick', (e) => {
-      e.preventDefault();
-      spawnEmojiRain(['❤️', '🧡', '💛', '💚', '💙', '💜', '🤎', '🖤'], 20);
-      showEasterEggToast('💖 reze appreciates you!');
-    });
-  }
+  // ===== EASTER EGG 8: (removed — below "Why Openhouse" section) =====
 
   // ===== HELPER: Spawn Confetti =====
   function spawnConfetti(count) {
