@@ -610,48 +610,8 @@
 
 
   // ===== 16. MOTION BLUR WHILE SCROLLING INSIDE POPUPS =====
-  // scroll doesn't bubble, so we listen on the capture phase at the document
-  // level and check whether the event originated inside an open modal.
-  if (!reduced) {
-    const blurState = new WeakMap();
-    const MAX_BLUR = 5; // px, kept modest so text stays legible mid-scroll
-
-    document.addEventListener('scroll', (e) => {
-      const target = e.target;
-      if (!target || target === document) return;
-      const overlay = (target.nodeType === 1) ? target.closest('.modal-overlay.open') : null;
-      if (!overlay) return;
-
-      const scroller = target.nodeType === 1 ? target : null;
-      if (!scroller) return;
-
-      let state = blurState.get(scroller);
-      const now = performance.now();
-      const top = scroller.scrollTop;
-      if (!state) {
-        state = { lastTop: top, lastTime: now, timer: null };
-        blurState.set(scroller, state);
-      }
-
-      const dt = Math.max(now - state.lastTime, 1);
-      const dy = top - state.lastTop;
-      const velocity = Math.abs(dy / dt); // px per ms
-      const blurAmt = Math.min(velocity * 16, MAX_BLUR);
-
-      scroller.style.transition = 'filter 0ms linear';
-      scroller.style.filter = blurAmt > 0.2 ? `blur(${blurAmt.toFixed(2)}px)` : '';
-      scroller.style.willChange = 'filter';
-
-      state.lastTop = top;
-      state.lastTime = now;
-
-      clearTimeout(state.timer);
-      state.timer = setTimeout(() => {
-        scroller.style.transition = 'filter 240ms ease-out';
-        scroller.style.filter = '';
-      }, 100);
-    }, { capture: true, passive: true });
-  }
+  // Removed: this applied a velocity-based blur() filter to popup content
+  // while scrolling, which made popups look blurry/out of focus during use.
 
   // ===== 17. SMOOTH INERTIA SCROLLING (Lenis) =====
   // Only initializes if nothing else in the page has already set up Lenis,
