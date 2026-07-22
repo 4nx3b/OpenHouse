@@ -587,16 +587,19 @@
   document.addEventListener('touchstart', handleInteraction, {passive:true});
   document.addEventListener('mousedown', handleInteraction, {passive:true});
 
-  // pill glow follow
-  document.addEventListener('mousemove', (e)=>{
-    $$('.cat-pill').forEach(pill=>{
-      const r=pill.getBoundingClientRect();
-      const mx=((e.clientX-r.left)/r.width)*100;
-      const my=((e.clientY-r.top)/r.height)*100;
-      pill.style.setProperty('--mx', mx+'%');
-      pill.style.setProperty('--my', my+'%');
-    });
-  }, {passive:true});
+  // pill glow follow (desktop hover only — on touch this leaves a stuck glow
+  // at the tap point because mobile browsers keep :hover active after a tap)
+  if (!isTouch) {
+    document.addEventListener('mousemove', (e)=>{
+      $$('.cat-pill').forEach(pill=>{
+        const r=pill.getBoundingClientRect();
+        const mx=((e.clientX-r.left)/r.width)*100;
+        const my=((e.clientY-r.top)/r.height)*100;
+        pill.style.setProperty('--mx', mx+'%');
+        pill.style.setProperty('--my', my+'%');
+      });
+    }, {passive:true});
+  }
 
 
   // ===== 16. GLOBAL CLICK RIPPLE =====
@@ -718,22 +721,26 @@
     }
 
     let metaTickTimer = null;
+    let listDebounce = null;
     const listObserver = new MutationObserver((mutations) => {
       const changed = mutations.some(m => m.type === 'childList' && (m.addedNodes.length || m.removedNodes.length));
       if (!changed) return;
-      if (!reduced) {
-        stagger(Array.from(catList.children));
-        catList.classList.remove('cat-list-fade');
-        void catList.offsetWidth;
-        catList.classList.add('cat-list-fade');
-      }
-      if (catMeta) {
-        clearTimeout(metaTickTimer);
-        catMeta.classList.remove('tick');
-        void catMeta.offsetWidth;
-        catMeta.classList.add('tick');
-        metaTickTimer = setTimeout(() => catMeta.classList.remove('tick'), 400);
-      }
+      clearTimeout(listDebounce);
+      listDebounce = setTimeout(() => {
+        if (!reduced) {
+          stagger(Array.from(catList.children));
+          catList.classList.remove('cat-list-fade');
+          void catList.offsetWidth;
+          catList.classList.add('cat-list-fade');
+        }
+        if (catMeta) {
+          clearTimeout(metaTickTimer);
+          catMeta.classList.remove('tick');
+          void catMeta.offsetWidth;
+          catMeta.classList.add('tick');
+          metaTickTimer = setTimeout(() => catMeta.classList.remove('tick'), 400);
+        }
+      }, 60);
     });
     listObserver.observe(catList, { childList: true });
   })();
