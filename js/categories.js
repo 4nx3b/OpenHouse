@@ -240,7 +240,8 @@
       const highlighted = apps.filter(app => app.starred).length;
       const newest = apps.reduce((latest, app) => !latest || String(app.added || '') > String(latest.added || '') ? app : latest, null);
       const acts = isAdmin
-        ? `<span class="cat-act cat-act-icon" role="button" tabindex="0" data-act="icon" title="Change icon" aria-label="Change icon for ${esc(cat)}">✎</span>
+        ? `<span class="cat-act cat-act-rename" role="button" tabindex="0" data-act="rename" title="Rename & icon" aria-label="Rename ${esc(cat)} category">✏</span>
+           <span class="cat-act cat-act-icon" role="button" tabindex="0" data-act="icon" title="Change icon" aria-label="Change icon for ${esc(cat)}">✎</span>
            <span class="cat-act cat-act-del" role="button" tabindex="0" data-act="del" title="Delete category" aria-label="Delete ${esc(cat)} category">✕</span>`
         : '';
       const isFeatured = cat === 'Featured';
@@ -302,15 +303,15 @@
   }
 
   /* ---------------- RENAME CATEGORY (owner only) ---------------- */
-  async function renameCategory(oldName){
+  // Opens the icon editor in rename mode — rename + icon in same popup
+  function renameCategory(oldName){
     if(!isAdmin) return;
-    const newName = prompt('Rename category "' + oldName + '" to:', oldName);
-    if(!newName || newName.trim() === '' || newName.trim() === oldName) return;
-    const trimmed = newName.trim();
-    if(ORDER.includes(trimmed) && trimmed !== oldName){
-      toast('A category named "' + trimmed + '" already exists.');
-      return;
-    }
+    openIconEditor(oldName, true);
+  }
+
+  // In-place rename (called from icon form submit when rename field is filled)
+  async function renameCategoryInPlace(oldName, trimmed){
+    if(!isAdmin || !trimmed || trimmed === oldName) return;
     // Update all apps in this category
     const apps = BY_CAT[oldName] || [];
     for(const app of apps){
@@ -338,7 +339,6 @@
     } else {
       saveJSON(LS_ICONS, CUSTOM_GLYPHS);
     }
-    saveUploads();
     renderGrid();
     buildPaletteApps();
     updateStats();
@@ -400,17 +400,28 @@
     return str.slice(0, 8);
   }
 
-  function openIconEditor(cat){
+  function openIconEditor(cat, renameMode){
     if(!isAdmin || !iconOverlay) return;
     iconCat = cat;
     $('#icon-cat-name').textContent = cat;
     $('#icon-current').textContent = glyphFor(cat);
     $('#icon-input').value = CUSTOM_GLYPHS[cat] || '';
     $('#icon-reset').hidden = !CUSTOM_GLYPHS[cat];
+    const renameField = $('#icon-rename-field');
+    const renameInput = $('#icon-rename-input');
+    if(renameField && renameInput){
+      renameField.hidden = !renameMode;
+      if(renameMode) renameInput.value = cat;
+    }
     iconOverlay.classList.add('open');
-    setTimeout(() => { try { $('#icon-input').focus(); } catch(e){} }, 80);
   }
-  function closeIconEditor(){ if(iconOverlay) iconOverlay.classList.remove('open'); iconCat = null; }
+  function closeIconEditor(){ 
+    if(iconOverlay) iconOverlay.classList.remove('open'); 
+    // Reset rename field hidden state
+    const rf = $('#icon-rename-field');
+    if(rf) rf.hidden = true;
+    iconCat = null; 
+  }
 
   if(iconOverlay){
     // live preview while typing / pasting
@@ -436,13 +447,29 @@
     $('#icon-form').addEventListener('submit', async e => {
       e.preventDefault();
       if(!iconCat) return;
+      const errEl = $('#icon-error');
+      errEl.textContent = '';
+      // Handle rename if field is visible
+      const renameInput = $('#icon-rename-input');
+      if(renameInput && !renameInput.parentElement.hidden){
+        const newName = renameInput.value.trim();
+        if(newName && newName !== iconCat){
+          if(ORDER.includes(newName)){
+            errEl.textContent = 'A category named "' + newName + '" already exists.';
+            return;
+          }
+          await renameCategoryInPlace(iconCat, newName);
+          iconCat = newName; // update for icon save below
+        }
+      }
+      // Handle icon
       const v = firstGrapheme($('#icon-input').value);
-      if(!v){ $('#icon-error').textContent = 'Type or paste an emoji first.'; return; }
-      $('#icon-error').textContent = '';
-      CUSTOM_GLYPHS[iconCat] = v;
-      try { await persistIcons(); } catch(err){ $('#icon-error').textContent = err.message || 'Save failed.'; return; }
+      if(v){
+        CUSTOM_GLYPHS[iconCat] = v;
+        try { await persistIcons(); } catch(err2){ errEl.textContent = err2.message || 'Save failed.'; return; }
+      }
       renderGrid();
-      toast('Icon updated for "' + iconCat + '".');
+      toast('Category "' + iconCat + '" updated.');
       closeIconEditor();
     });
   }
@@ -1230,12 +1257,13 @@
         });
         itemsWrap.appendChild(b);
       });
-      // wire search filter
+      // wire search filter — NO auto-focus to prevent keyboard pop
       const searchInput = selectMenu.querySelector('.select-search-input');
       if(searchInput){
         searchInput.addEventListener('input', e => filterSelectItems(e.target.value));
         searchInput.addEventListener('click', e => e.stopPropagation());
-        setTimeout(() => searchInput.focus(), 80);
+        // Only focus on desktop (physical keyboard), never on touch
+        if(!isTouch) setTimeout(() => searchInput.focus(), 80);
       }
       // position under the button (fixed coords, flip up if needed)
       const r = selectBtn.getBoundingClientRect();

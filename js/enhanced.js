@@ -264,7 +264,6 @@
   const paletteInput = $('#palette-input');
   if (paletteInput) {
     paletteInput.addEventListener('focus', () => {
-      // Scroll palette into view after keyboard appears
       setTimeout(()=>{
         try{
           const overlay = $('#palette-overlay');
@@ -272,35 +271,46 @@
           if (palette) {
             palette.scrollIntoView({ block: 'center', behavior: 'smooth' });
           }
-          // Use visualViewport if available to adjust
-          if (window.visualViewport) {
-            const vv = window.visualViewport;
-            const overlayEl = $('#palette-overlay');
-            if (overlayEl) {
-              overlayEl.style.paddingBottom = `${Math.max(0, window.innerHeight - vv.height - vv.offsetTop)}px`;
-            }
-          }
         }catch(e){}
       }, 350);
     });
-    paletteInput.addEventListener('blur', () => {
-      const overlayEl = $('#palette-overlay');
-      if (overlayEl) overlayEl.style.paddingBottom = '';
-    });
+  }
 
-    // Handle visual viewport resize (keyboard open/close)
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', ()=>{
-        const overlay = $('#palette-overlay');
-        if (!overlay || !overlay.classList.contains('open')) return;
-        if (document.activeElement === paletteInput) {
-          // Keep input visible
-          setTimeout(()=>{
-            paletteInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-          }, 50);
+  // ---- Global: keep popups visible when keyboard opens ----
+  if (window.visualViewport) {
+    const adjustModalsForKeyboard = () => {
+      const vv = window.visualViewport;
+      const keyboardOpen = vv.height < window.innerHeight - 60;
+      const modalOverlays = $$('.modal-overlay.open');
+      modalOverlays.forEach(overlay => {
+        if (keyboardOpen) {
+          // Shift the modal up so it stays visible above keyboard
+          const modal = overlay.querySelector('.modal, .palette');
+          if (modal) {
+            const shift = (window.innerHeight - vv.height - vv.offsetTop) * 0.7;
+            modal.style.transform = 'translateY(-' + Math.max(0, shift) + 'px) scale(1)';
+            modal.style.transition = 'transform 0.25s ease-out';
+          }
+        } else {
+          const modal = overlay.querySelector('.modal, .palette');
+          if (modal) {
+            modal.style.transform = '';
+            modal.style.transition = 'transform 0.25s ease-out';
+          }
         }
       });
-    }
+    };
+
+    window.visualViewport.addEventListener('resize', adjustModalsForKeyboard);
+    window.visualViewport.addEventListener('scroll', adjustModalsForKeyboard);
+
+    // Also hook into modal opens to ensure proper positioning
+    const modalObserver = new MutationObserver(() => {
+      setTimeout(adjustModalsForKeyboard, 100);
+    });
+    $$('.modal-overlay').forEach(o => {
+      modalObserver.observe(o, { attributes: true, attributeFilter: ['class'] });
+    });
   }
 
 
@@ -772,7 +782,7 @@
     }
   })();
 
-  // ---- Easter Egg 2: Triple-click the brand logo 5 times ----
+  // ---- Easter Egg 2: Triple-click the brand logo 7 times ----
   (function(){
     let brandClicks = 0;
     let brandTimer = null;
@@ -784,13 +794,30 @@
         brandTimer = setTimeout(() => { brandClicks = 0; }, 1500);
         if(brandClicks >= 7){
           brandClicks = 0;
-          document.body.style.filter = 'invert(1) hue-rotate(180deg)';
-          showToast('🥚 Inverted reality mode activated! (refresh to reset)');
+          // Use a fixed overlay instead of body filter to prevent scroll jank
+          let overlay = document.getElementById('invert-overlay');
+          if(!overlay){
+            overlay = document.createElement('div');
+            overlay.id = 'invert-overlay';
+            overlay.style.cssText = 'position:fixed;inset:0;z-index:99998;pointer-events:none;background:transparent;mix-blend-mode:difference;';
+            document.body.appendChild(overlay);
+            // Add a white background overlay to create the invert effect via difference blend
+            const white = document.createElement('div');
+            white.id = 'invert-bg';
+            white.style.cssText = 'position:fixed;inset:0;z-index:99997;pointer-events:none;background:#fff;opacity:0;transition:opacity 0.3s ease;';
+            document.body.appendChild(white);
+          }
+          const whiteBg = document.getElementById('invert-bg');
+          if(whiteBg) whiteBg.style.opacity = '1';
+          showToast('🥚 Inverted reality mode activated!');
           if(navigator.vibrate) navigator.vibrate([30,80,30,80,30]);
           setTimeout(() => {
-            document.body.style.filter = '';
-            document.body.style.transition = 'filter 2s ease';
-            setTimeout(() => { document.body.style.transition = ''; }, 2000);
+            if(whiteBg) whiteBg.style.opacity = '0';
+            setTimeout(() => { 
+              if(whiteBg) whiteBg.remove();
+              const ov = document.getElementById('invert-overlay');
+              if(ov) ov.remove();
+            }, 400);
           }, 3000);
         }
       });
