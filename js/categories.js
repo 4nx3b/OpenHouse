@@ -268,6 +268,7 @@
         if(act){
           e.stopPropagation();
           if(act.dataset.act === 'icon') openIconEditor(btn.dataset.cat);
+          else if(act.dataset.act === 'rename') renameCategory(btn.dataset.cat);
           else deleteCategory(btn.dataset.cat);
           return;
         }
@@ -298,6 +299,51 @@
     document.addEventListener('keydown', e => {
       if(e.key === 'Escape' && confirmOverlay.classList.contains('open')) settleConfirm(false);
     });
+  }
+
+  /* ---------------- RENAME CATEGORY (owner only) ---------------- */
+  async function renameCategory(oldName){
+    if(!isAdmin) return;
+    const newName = prompt('Rename category "' + oldName + '" to:', oldName);
+    if(!newName || newName.trim() === '' || newName.trim() === oldName) return;
+    const trimmed = newName.trim();
+    if(ORDER.includes(trimmed) && trimmed !== oldName){
+      toast('A category named "' + trimmed + '" already exists.');
+      return;
+    }
+    // Update all apps in this category
+    const apps = BY_CAT[oldName] || [];
+    for(const app of apps){
+      app.cat = trimmed;
+      if(app.tags && app.tags.includes(oldName)){
+        app.tags = app.tags.map(t => t === oldName ? trimmed : t);
+      }
+      if(DB.ready && app.id != null){
+        try { await DB.updateApp(ownerPass, app.id, { cat: trimmed }); } catch(e){}
+      }
+    }
+    // Update category data
+    BY_CAT[trimmed] = BY_CAT[oldName] || [];
+    delete BY_CAT[oldName];
+    const idx = ORDER.indexOf(oldName);
+    if(idx > -1) ORDER[idx] = trimmed;
+    // Migrate custom icon
+    if(CUSTOM_GLYPHS[oldName]){
+      CUSTOM_GLYPHS[trimmed] = CUSTOM_GLYPHS[oldName];
+      delete CUSTOM_GLYPHS[oldName];
+    }
+    saveUploads();
+    if(DB.ready){
+      DB.setMeta(ownerPass, 'cat_icons', CUSTOM_GLYPHS).catch(()=>{});
+    } else {
+      saveJSON(LS_ICONS, CUSTOM_GLYPHS);
+    }
+    saveUploads();
+    renderGrid();
+    buildPaletteApps();
+    updateStats();
+    logActivity('edited', trimmed, trimmed);
+    toast('Category renamed to "' + trimmed + '".');
   }
 
   /* ---------------- DELETE CATEGORY (owner only) ---------------- */
@@ -1119,9 +1165,13 @@
   function populateCategorySelect(){
     const sel = $('#up-category');
     // Featured is curated through the star system — not a direct upload target.
-    sel.innerHTML = ORDER.filter(c => c !== 'Featured')
-      .map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
+    // First option is blank placeholder — no category selected by default.
+    sel.innerHTML = `<option value="">-- Choose a category --</option>`
+      + ORDER.filter(c => c !== 'Featured')
+        .map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('')
       + `<option value="__new__">＋ Create new category</option>`;
+    // Select the blank placeholder by default
+    sel.value = '';
     syncSelectButton();
   }
 
@@ -1154,10 +1204,20 @@
 
     function closeSelectMenu(){ selectMenu.classList.remove('open'); }
 
+    function filterSelectItems(q){
+      const query = q.trim().toLowerCase();
+      selectMenu.querySelectorAll('.select-item').forEach(item => {
+        const hay = (item.textContent || '').toLowerCase();
+        item.style.display = query ? (hay.includes(query) ? '' : 'none') : '';
+      });
+    }
+
     function openSelectMenu(){
-      // rebuild items from the native options
-      selectMenu.innerHTML = '';
+      // rebuild items from the native options, with a search bar at top
+      selectMenu.innerHTML = `<div class="select-search"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg><input type="text" class="select-search-input" placeholder="Filter categories…" autocomplete="off"></div><div class="select-items-wrap"></div>`;
+      const itemsWrap = selectMenu.querySelector('.select-items-wrap');
       Array.from(catSelect.options).forEach(opt => {
+        if(!opt.value) return; // skip empty placeholder
         const b = document.createElement('button');
         b.type = 'button';
         b.className = 'select-item' + (opt.selected ? ' active' : '');
@@ -1168,12 +1228,19 @@
           syncSelectButton();
           closeSelectMenu();
         });
-        selectMenu.appendChild(b);
+        itemsWrap.appendChild(b);
       });
+      // wire search filter
+      const searchInput = selectMenu.querySelector('.select-search-input');
+      if(searchInput){
+        searchInput.addEventListener('input', e => filterSelectItems(e.target.value));
+        searchInput.addEventListener('click', e => e.stopPropagation());
+        setTimeout(() => searchInput.focus(), 80);
+      }
       // position under the button (fixed coords, flip up if needed)
       const r = selectBtn.getBoundingClientRect();
       const pad = 8, gap = 6;
-      const menuH = Math.min(window.innerHeight * 0.46, catSelect.options.length * 42 + 10);
+      const menuH = Math.min(window.innerHeight * 0.46, 320);
       let top = r.bottom + gap;
       const flipUp = top + menuH > window.innerHeight - pad;
       if(flipUp) top = Math.max(pad, r.top - gap - menuH);
@@ -1522,10 +1589,28 @@
     updateStats();
 
     errEl.textContent = '';
-    closeUpload();
-    logActivity('added', name, cat);
-    toast('App published to “' + cat + '”.');
-    openCat(cat);
+    const isMulti = $('#up-multi') && $('#up-multi').checked;
+
+    if(isMulti){
+      // Stay on the form — reset key fields for the next app
+      logActivity('added', name, cat);
+      const count = (BY_CAT[cat] || []).length;
+      toast('"' + name + '" published! ' + count + ' total in "' + cat + '". Fill in the next…');
+      $('#up-name').value = '';
+      $('#up-desc').value = '';
+      $('#up-repo').value = '';
+      $('#up-license').value = '';
+      $('#up-repo-hint').textContent = 'Paste a repo URL and I\'ll pull the description automatically.';
+      $('#up-thumb-preview').hidden = true;
+      pickedThumb = null; repoThumb = '';
+      $('#up-thumb').value = '';
+      setTimeout(() => { try { $('#up-name').focus(); } catch(e){} }, 100);
+    } else {
+      closeUpload();
+      logActivity('added', name, cat);
+      toast('App published to “' + cat + '”.');
+      openCat(cat);
+    }
   });
 
   /* ---------------- BACKGROUND INTERACTION LOCK ---------------- */

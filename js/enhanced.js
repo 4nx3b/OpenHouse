@@ -726,4 +726,205 @@
 
   // Export for external use
   window.OpenHouseEnhanced = { showToast, init, playTapSound, showCrosshair, unlockAudio };
+
+  /* ============================================================
+     EASTER EGGS — secret features hidden in plain sight
+     ============================================================ */
+
+  // ---- Easter Egg 1: Konami Code (↑ ↑ ↓ ↓ ← → ← → B A) ----
+  // Activates a confetti rain + hidden message
+  (function(){
+    const KONAMI = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a'];
+    let konamiIdx = 0;
+    let konamiTimer = null;
+    document.addEventListener('keydown', function(e){
+      if(e.key === KONAMI[konamiIdx]){
+        konamiIdx++;
+        if(konamiTimer) clearTimeout(konamiTimer);
+        konamiTimer = setTimeout(() => { konamiIdx = 0; }, 3000);
+        if(konamiIdx === KONAMI.length){
+          konamiIdx = 0;
+          triggerKonami();
+        }
+      } else {
+        konamiIdx = 0;
+      }
+    });
+
+    function triggerKonami(){
+      // Confetti burst
+      const colors = ['#ffb454','#ffd9a0','#ff7a7a','#7dd87d','#7ab8ff','#ff9dff'];
+      for(let i = 0; i < 80; i++){
+        const confetti = document.createElement('div');
+        confetti.style.cssText = `position:fixed;width:${6+Math.random()*8}px;height:${6+Math.random()*10}px;background:${colors[Math.floor(Math.random()*colors.length)]};left:${Math.random()*100}vw;top:-20px;z-index:99999;pointer-events:none;border-radius:${Math.random()>0.5?'50%':'2px'};animation:konamiFall ${2+Math.random()*3}s ease-in forwards;animation-delay:${Math.random()*0.5}s;opacity:0.9;`;
+        document.body.appendChild(confetti);
+        setTimeout(() => confetti.remove(), 3500);
+      }
+      // Add the keyframe if not already present
+      if(!document.getElementById('konami-style')){
+        const style = document.createElement('style');
+        style.id = 'konami-style';
+        style.textContent = '@keyframes konamiFall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}';
+        document.head.appendChild(style);
+      }
+      showToast('🥚 You found the Konami Code! The source is strong with this one.');
+      if(navigator.vibrate) navigator.vibrate([50,50,50,50,200]);
+    }
+  })();
+
+  // ---- Easter Egg 2: Triple-click the brand logo 5 times ----
+  (function(){
+    let brandClicks = 0;
+    let brandTimer = null;
+    const brand = document.querySelector('.brand');
+    if(brand){
+      brand.addEventListener('click', function(e){
+        brandClicks++;
+        if(brandTimer) clearTimeout(brandTimer);
+        brandTimer = setTimeout(() => { brandClicks = 0; }, 1500);
+        if(brandClicks >= 7){
+          brandClicks = 0;
+          document.body.style.filter = 'invert(1) hue-rotate(180deg)';
+          showToast('🥚 Inverted reality mode activated! (refresh to reset)');
+          if(navigator.vibrate) navigator.vibrate([30,80,30,80,30]);
+          setTimeout(() => {
+            document.body.style.filter = '';
+            document.body.style.transition = 'filter 2s ease';
+            setTimeout(() => { document.body.style.transition = ''; }, 2000);
+          }, 3000);
+        }
+      });
+    }
+  })();
+
+  // ---- Easter Egg 3: Type "openhouse" quickly ----
+  (function(){
+    const SECRET = 'openhouse';
+    let secretIdx = 0;
+    let secretTimer = null;
+    document.addEventListener('keypress', function(e){
+      if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if(e.key.toLowerCase() === SECRET[secretIdx]){
+        secretIdx++;
+        if(secretTimer) clearTimeout(secretTimer);
+        secretTimer = setTimeout(() => { secretIdx = 0; }, 2000);
+        if(secretIdx === SECRET.length){
+          secretIdx = 0;
+          // Flash the search kbd
+          const kbd = document.querySelector('.palette-input-container kbd');
+          if(kbd){
+            kbd.style.transition = 'all 0.3s ease';
+            kbd.style.background = 'var(--accent)';
+            kbd.style.color = '#0a0a0a';
+            kbd.textContent = '🥚';
+            setTimeout(() => { kbd.style.background = ''; kbd.style.color = ''; kbd.textContent = 'Esc'; }, 2500);
+          }
+          showToast('🥚 You typed the magic word!');
+        }
+      } else {
+        secretIdx = 0;
+      }
+    });
+  })();
+
+  // ---- Easter Egg 4: Press "H" twice for hidden counter ----
+  (function(){
+    let hCount = 0;
+    let hTimer = null;
+    document.addEventListener('keydown', function(e){
+      if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.metaKey || e.ctrlKey) return;
+      if(e.key.toLowerCase() === 'h'){
+        hCount++;
+        if(hTimer) clearTimeout(hTimer);
+        hTimer = setTimeout(() => { hCount = 0; }, 800);
+        if(hCount >= 3){
+          hCount = 0;
+          const eggs = parseInt(localStorage.getItem('openhouse-eggs') || '0') + 1;
+          localStorage.setItem('openhouse-eggs', eggs);
+          showToast('🥚 Easter egg #' + eggs + ' found! (H×3 secret)');
+        }
+      }
+    });
+  })();
+
+  // ---- Easter Egg 5: Shake device on mobile (if supported) ----
+  if(window.DeviceMotionEvent && typeof window.DeviceMotionEvent.requestPermission !== 'function'){
+    let lastShake = 0;
+    let shakeCount = 0;
+    window.addEventListener('devicemotion', function(e){
+      const acc = e.accelerationIncludingGravity;
+      if(!acc) return;
+      const mag = Math.sqrt(acc.x*acc.x + acc.y*acc.y + acc.z*acc.z);
+      if(mag > 28){
+        const now = Date.now();
+        if(now - lastShake < 600){
+          shakeCount++;
+          if(shakeCount >= 3){
+            shakeCount = 0;
+            document.querySelectorAll('.cat-pill').forEach((pill, i) => {
+              pill.style.transition = 'transform 0.5s cubic-bezier(.22,1.3,.36,1)';
+              pill.style.transform = `translateY(${(Math.random()-0.5)*20}px) rotate(${(Math.random()-0.5)*10}deg)`;
+              setTimeout(() => { pill.style.transform = ''; }, 600);
+            });
+            showToast('🥚 Earthquake! The directory is shaking...');
+          }
+        } else {
+          shakeCount = 0;
+        }
+        lastShake = now;
+      }
+    }, { passive: true });
+  }
+
+  // ---- Easter Egg 6: Right-click the footer credit ----
+  (function(){
+    const credit = document.querySelector('.credit-link');
+    if(credit){
+      credit.addEventListener('contextmenu', function(e){
+        e.preventDefault();
+        const msgs = [
+          '🥚 Nice find! Built with love by reze.',
+          '🥚 The code is open source too — check the repo!',
+          '🥚 No secrets here... or are there?',
+          '🥚 You have a keen eye for detail!',
+          '🥚 This website has no ads. And never will.'
+        ];
+        showToast(msgs[Math.floor(Math.random() * msgs.length)]);
+        if(navigator.vibrate) navigator.vibrate(15);
+      });
+    }
+  })();
+
+  // ---- Easter Egg 7: Resize the window rapidly 3 times ----
+  (function(){
+    let resizeCount = 0;
+    let resizeTimer = null;
+    window.addEventListener('resize', function(){
+      resizeCount++;
+      if(resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => { resizeCount = 0; }, 1500);
+      if(resizeCount >= 5){
+        resizeCount = 0;
+        showToast('🥚 Stop that! You\'re making the pixels dizzy... 🌀');
+      }
+    });
+  })();
+
+  // ---- Easter Egg 8: Hold Ctrl+Shift+D ----
+  document.addEventListener('keydown', function(e){
+    if(e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'd'){
+      e.preventDefault();
+      // Toggle dark reader easter egg mode
+      const body = document.body;
+      if(body.style.getPropertyValue('--egg-mode')){
+        body.style.removeProperty('--egg-mode');
+        body.style.background = '';
+        showToast('🥚 Debug mode: OFF');
+      } else {
+        body.style.setProperty('--egg-mode', '1');
+        showToast('🥚 Debug mode: ON — inspecting the source...');
+      }
+    }
+  });
+
 })();
